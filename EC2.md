@@ -115,3 +115,86 @@ For this a role was create in IAM for EC2 called DemoRoleForEC2 and assigned to 
     ]
 }
 ```
+
+## EC2 Instance Purchasing Options
+
+### On-Demand Instances
+
+- Purpose: For short-term uninterrupted unpredictable workloads
+- Cost: highest cost
+- Details: Predictable pricing.
+- Payment: Billing per second, after the 1st minute, no upfront payment.
+- Reservation period: None
+
+### Reserved Instances (1 & 3 years)
+
+- Purpose: Long workloads with steady state applications, e.g. a database.
+- Cost: Up to 72% discount compared to On-demand
+- Details:
+  - Reserve specific instance attributes; instance type, region, tenancy, OS.
+  - Scope is Region or Availability Zone (AZ).
+  - Buy or sell in the Reserved Instance Marketplace
+- Reservation period: 1 or 3 years (longer is greater discount)
+- Payment: No upfront, partial upfront, all upfront (greater discount for upfront)
+
+#### Convertable Reserved Instances
+
+Allows changing the instance specification; instance type, family, OS, scope, and tenancy.
+
+- Cost: Up to 66% discount
+
+### Savings Plans (1 & 3 years)
+
+- Purpose: Long workloads, commitment to amount of usage.
+- Cost: Up to 72% discount compared to On-demand
+  - Usage above the savings plan range is billed at the On-Demand price.
+- Details:
+  - Fixed to a specific instance family and AWS region, e.g. M5 us-east.
+  - Flexible configuration on instance size, OS, tenancy (host, dedicated, default).
+- Reservation period: 1 or 3 years, but **commiting to a certain type of usage, e.g. cost per hour**.
+
+### Spot Instances
+
+- Purpose: Short workloads, resilient to failure, e.g. batch jobs, image processing, distributed workloads, etc.
+- Details:
+  - You define a maximum price you will pay for the spot instances, if the spot price goes over it, then you lose your instance.
+  - These are **not** suitable for databases, or critical applications.
+- Cost: Up to 90% discount compared to On-Demand (cheapest).
+
+### Dedicated Hosts
+
+- Purpose: Reserve entire physical server and control instance placement. E.g.,
+  - When you have your own licenses per-socket/core/vm.
+  - Where regulatory compliancy requires a dedicated server.
+- Details:
+  - Allows you to control instance placement
+- Cost: Most expensive
+- Reservation period:
+  - On-Demand - pay per-second
+  - Reserved - 1 or 3 years (No upfront, partial upfront, all upfront).
+
+### Dedicated Instances
+
+- Purpose: Instances run on hardware dedicated to you
+- Details:
+  - May share hardware with other instances in same account
+  - No control over instance placement (can move after stopping and starting)
+- Reservation period:
+  - On-Demand - pay per-second
+  - Spot instances - pay per-hour - same pricing as standard spot instances.
+  - Reserved - 1 or 3 years (No upfront, partial upfront, all upfront).
+
+### Dedicated Hosts vs Dedicated Instances
+
+Think of Dedicated Instances as having a dedicated parking spot in a shared parking garage. You have exclusive use of the spot, but you don't control which specific garage you're in.
+Think of Dedicated Hosts as having an entire dedicated parking garage. You have complete control over the garage and its resources.
+
+### Capacity Reservations
+
+- Purpose: Short term uninterrupted workloads that need to be in a specific AZ.
+- Details:
+  - Reserve capacity in a specific AZ for any duration.
+  - You have access to it whenever you need it.
+- Reservation period: None - you can cancel at any time
+- Cost: No discsounts, charged at On-Demand pricing whether you are using the instance or not.
+  - Combine with Regional Reserved Instances and Savings Plans to benefit from discounts.
