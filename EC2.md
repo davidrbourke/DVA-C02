@@ -8,7 +8,7 @@ Elastic Compute - Infrastructure as a service
 - Storing data on Virtual Drives (EBS)
 - Distributing load balancing (ELB)
 - Auto-scaling Groups (ASG)
-- Bootstrapping - run scripts on start up, e.g. installing software
+- Bootstrapping - run scripts on start up, e.g. installing software. Create a Bash script in **EC2 User Data** to automate EV2 instance start up operations.
 
 IP is dynamic by default. A new IP is generated for the VM between restarts.
 
@@ -80,7 +80,7 @@ Example
 
 ## Connecting into EC2
 
-On Linux, Max, Windows 10+ use SSH.
+On Linux, Mac, Windows 10+ use SSH.
 Windows less than v10, use Putty.
 Web Browser - EC2 Instance Connect - Only works with Amazon Linux 2 (OS on VM). A .pem file will be automatically created. Existing Security Group rules still apply.
 
@@ -135,7 +135,7 @@ For this a role was create in IAM for EC2 called DemoRoleForEC2 and assigned to 
   - Scope is Region or Availability Zone (AZ).
   - Buy or sell in the Reserved Instance Marketplace
 - Reservation period: 1 or 3 years (longer is greater discount)
-- Payment: No upfront, partial upfront, all upfront (greater discount for upfront)
+- Payment: No upfront, partial upfront, all upfront (more upfront is larger discount)
 
 #### Convertable Reserved Instances
 
@@ -198,3 +198,28 @@ Think of Dedicated Hosts as having an entire dedicated parking garage. You have 
 - Reservation period: None - you can cancel at any time
 - Cost: No discsounts, charged at On-Demand pricing whether you are using the instance or not.
   - Combine with Regional Reserved Instances and Savings Plans to benefit from discounts.
+
+## Analogy of Hotels reservation
+
+1. On-Demand: staying at hotel whenever required with no pre-planning and paying full price.
+2. Reserved: planning ahead and staying for a long time, getting a discount for longer term fixed period pre-arranged booking (in a specific room type - unless using Convertable reserved).
+3. Savings Plan: paying a certain amount per hour for a certain period and stay in any room type.
+4. Spot instances: biding on empty rooms, highest bidder gets the room, can get ejected at anytime if someone else will pay more.
+5. Dedicated hosts: booking the entire hotel and having full access to the hotel.
+6. Capicity reservations: booking a room for a fixed period at full price even if you don't stay there.
+
+## Public IP Charges
+
+### IPv4
+
+1. In first 12 months, 750 hours free on EC2 instances of public IP.
+2. Exceeded the 750 hours or 12 months, is charged at $0.005 per hour ($43.80 per year)
+3. Using a Public IP in other services, e.g., a load balancer, has no free option.
+
+A guide to investigating what services you have that are causing IPv4 charges: https://repost.aws/articles/ARknH_OR0cTvqoTfJrVGaB8A/why-am-i-seeing-charges-for-public-ipv4-addresses-when-i-am-under-the-aws-free-tier
+
+Information about what Public IP you are using can be configured in the Amazon VPC IP Address Manager service (IPAM): https://eu-west-1.console.aws.amazon.com/ipam/home?region=eu-west-1#Home
+
+### IPv6
+
+IPv6 is free currently.
