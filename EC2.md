@@ -37,7 +37,7 @@ Example: M6.2xlarge
 
 ### Security Groups
 
-Security Groups control traffic allowed in and out of EC2 instances.
+Security Groups are virtual firewalls and control traffic allowed in and out of EC2 instances.
 
 - Only contains **allow** rules.
 - Can reference by IP, or by other Security Groups.

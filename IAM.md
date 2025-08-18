@@ -75,6 +75,23 @@ aws iam list-users
 - Permissions you give to a service to perform actions, uses IAM Roles, e.g. and EC2 trying to access some information using the IAM Role.
 - The Role is created for the Service, and a Policy is assigned to the Role.
 
+### Example
+
+- Create and EC2 and try to list iam users, it won't have access (aws iam list-users).
+- Create a Role, assign a Permission to the Role, for the Permission use the Policy: IAMReadOnlyAccess.
+- Assign the new Role to the EC2 instance IAM Role (EC2 Instance > Actions > Security > Modify IAM Role - choose the new role and save.)
+
+Another example would be an EC2 instance trying to access and S3 bucket. Either from the AWS CLI or an API call, permission would be needed to access the S3 bucket with a Role with a Policy like this:
+
+```
+{
+  "Effect": "Allow",
+  "Action": "s3:GetObject",
+  "Resource": "arn:aws:s3:::your-bucket-name/*"
+}
+
+```
+
 ## Reports
 
 - IAM Credentials Report – lists all users and the status of their various credentials
