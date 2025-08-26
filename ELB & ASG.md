@@ -199,7 +199,7 @@ When using multiple Availability Zones, each Zone has an ELB Node, within each A
 Allow traffic between load balancer and clients to be encrypted.
 
 - SSL Secure Sockets Layer, used to encrypt connections.
-- TLC Transport Layer Security, is a newer version of SSL.
+- TLS Transport Layer Security, is a newer version of SSL.
 - Public certificates are issued by Certificate Authorities (CA).
 - Using the certificate the traffic between the client and load balancer can be encrypted.
 - Certificates have an expirition date and must be renewed.
@@ -219,7 +219,7 @@ Allow traffic between load balancer and clients to be encrypted.
 
 ### Server Name Indication (SNI)
 
-Allows loading multiple certificates to for multiple websites onto one server.
+Allows loading multiple certificates for multiple websites onto one server.
 
 - The client will specify which website/hostname to request, and the server will load the correct certificate for the website.
 - Works on ALB, NLB, or Cloudfront
@@ -288,7 +288,7 @@ Horizontal scaling: scale-out and scale-in new instance based on load. ASG autom
 
 #### Cool Down Period
 
-After an scaling event is triggered, there is a period of time to see what the impact of the scaling event is, before making any decisions to auto-scale again.
+After a scaling event is triggered, there is a period of time to see what the impact of the scaling event is, before making any decisions to auto-scale again.
 
 ### Good Scaling Metrics
 
@@ -344,7 +344,7 @@ Configure Launch options:
   4. Review options and create the ASG
 
   - The initial EC2 instance will be created.
-  - The ASG Activity tab will show the instances acivity for adding/removing EC2 Instances.
+  - The ASG Activity tab will show the instances activity for adding/removing EC2 Instances.
 
   5. Scaling the ASG
 

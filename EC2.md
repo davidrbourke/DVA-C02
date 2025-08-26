@@ -185,7 +185,7 @@ Allows changing the instance specification; instance type, family, OS, scope, an
   - Spot instances - pay per-hour - same pricing as standard spot instances.
   - Reserved - 1 or 3 years (No upfront, partial upfront, all upfront).
 
-### Dedicated Hosts vs Dedicated Instances
+#### Dedicated Hosts vs Dedicated Instances
 
 Think of Dedicated Instances as having a dedicated parking spot in a shared parking garage. You have exclusive use of the spot, but you don't control which specific garage you're in.
 Think of Dedicated Hosts as having an entire dedicated parking garage. You have complete control over the garage and its resources.

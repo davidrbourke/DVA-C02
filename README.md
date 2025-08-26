@@ -1,5 +1,7 @@
 # DVA-C02
 
+Notes from udemy.com/course/aws-certified-developer-associate-dva-c01
+
 A curated list of documentation files for quick navigation:
 
 | Topic                                        | Link                                                  |

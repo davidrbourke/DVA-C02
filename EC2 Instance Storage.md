@@ -173,7 +173,7 @@ A Managed network file system.
 
 ### Throughput mode
 
-- Bursting - this is when the throughput grows as you have use more storage.
+- Bursting - this is when the throughput grows as you use more storage.
 - Enhanced:
   - Provisioned - reserved throughput regardless of storage size.
   - Elastic - automatically scales based on workload, for unpredictable workloads.
