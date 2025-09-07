@@ -40,9 +40,10 @@ If you have an application with a high number of reads, a single RDS instance ma
 
 - Up to **15** read replicas
 - Within AZ, Cross AZ, or Cross region
-- Eventually consistent - reads are asynchronous.
+- Eventually consistent - reads are **asynchronous**.
 - A read replica can be promoted out of the read-replicas to become its own write database
 - The connection string in the application must include all the read replicas included.
+  - Auto-scaling and a reader endpoint is only available in RDS Aurora - for non-Aurora RDS, you would have to manually scale in/out read-replicas and update the connection string with the read replicas (although there are work-arounds).
 - Example of a use: A reporting database, that you don't want to slow down the application database, can read data from a read-replica.
 
 ### Network Costs
@@ -57,7 +58,7 @@ If you have an application with a high number of reads, a single RDS instance ma
 
 This is **NOT** the same as Read Replicas, it is for Disaster Recovery.
 
-- Replication is synchronous, so writes only complete when written to all replicas.
+- Replication is **synchronous**, so writes only complete when written to all replicas.
 - Application communicates to RDS with a single DNS name
 - If the RDS fails, there is automatic failover to the replica, you don't need to do anything during the failure.
 - Optional: read replicas can also be setup to be mutli-AZ.
@@ -67,7 +68,7 @@ This is **NOT** the same as Read Replicas, it is for Disaster Recovery.
 - A zero downtime operation.
 - A snapshot gets taken of the primary DB
 - The Snapshot is restored to the new database
-- Synchronisation is enabled, so the secondary database catches up with and is then kept in sync with the primary database.
+- Synchronisation is enabled, so the secondary database catches up with it and is then kept in sync with the primary database.
 
 ## Aurora DB
 
@@ -104,13 +105,13 @@ A properietary database from AWS.
 
 ## RDS & Aurora Security
 
-- At-rest encryption for the primary and replica databases van be enabled using AWS KMS.
+- At-rest encryption for the primary and replica databases can be enabled using AWS KMS.
 - If the primary is not encrypted, the replicas cannot be.
 - Encrypting a current non-encrypted DB requires saving a snapshot and restoring as encrypted.
 - In-flight encryption, by default, uses TLS.
 - IAM Authentication: Can use IAM Roles to connect to the database so don't have to use a username/password.
 - Security Groups: can be setup to control access to the database ports, etc.
-- No SSH available exception on RDS Customer
+- No SSH available except on RDS Custom for Oracle and SQL Server.
 - Audit logs, e.g. of queries can be enabled (optionally sent to CloudWatch for longer retention).
 
 ## RDS Proxy
@@ -122,9 +123,11 @@ The RDS Proxy sits in front of the RDS database, instead of your application con
 - Reduces load on the database, as fewer overall connections may be needed, and minimizes how the long the connections may be open for.
 - RDS Proxy is Serverless, autoscaling and Multi-AZ
 - Reduces RDS & Aurora failover time by up to 66%
-- Supports RDS: MySQL, Postgres, MariaDB, SQL Server, Aurora.
-- Application just need a different connection string to the proxy instead of the database.
-- Can be used to enforece IAM Authentication for DB connection, and stores credentials in AWS Secrets Manager.
+- Supports RDS: MySQL, Postgres, MariaDB, SQL Server, Aurora. Oracle is not supported.
+- Application just needs a different connection string to the proxy instead of the database.
+- Can be used to enfoece IAM Authentication for DB connection, and stores credentials in AWS Secrets Manager.
+  - For non-RDS Proxy IAM Authentication, an IAM User or Role must be given permission to connect to the database. Using AWS CLI or SDK, a token is requested for the User/Role, and the token is used as the password to connect to the database.
+  - For RDS Proxy IAM Authentication, IAM Authenticates the client (App or user), then RDS proxy authenticates to the DB, with a password/credentials stored in Secrets Manager.
 - RDS Proxy is not publically accessible from the internet, it must be accessed from a VPC.
 
 ## ElastiCache
@@ -137,12 +140,12 @@ Elasticache is managed cache (Redis or Memcached), in-memory databases for high-
 ### ElastiCache Solution Architectures
 
 - DB cache
-  1. Application attempts to read data from the cache, a cache hit will reutrn the data.
-  2. A cache miss, will load the data from the database back to the application.
+  1. Application attempts to read data from the cache, a cache-hit will reutrn the data.
+  2. A cache-miss, will load the data from the database back to the application.
   3. The application will write the data to the cache for future requests to use.
   4. An invalidation strategy is required, to keep data roughly in sync with the DB.
 - User Session store, to make application Stateless
-  1. User session is writen to cache by one instance of the application
+  1. User session is written to cache by one instance of the application
   2. Another instance of the application (e.g. on a different EC2 instance) for the User, loads state from the cache. So the user state is not tied to the instance.
 
 ### Redis vs MemCached
@@ -150,7 +153,7 @@ Elasticache is managed cache (Redis or Memcached), in-memory databases for high-
 #### Redis
 
 - Redis has read replicas
-- Data persistence using AOF - to recover from failure
+- Data persistence using Append Only File (AOF) - to recover from failure, it stores a log of the SET, DEL events, and re-runs them all on failure recovery.
 - Backup and restore features
 - Supports sets and sorted sets
 
@@ -211,7 +214,7 @@ Elasticache is managed cache (Redis or Memcached), in-memory databases for high-
 
 https://aws.amazon.com/caching/best-practices/
 
-- Only cache the data if it is effective or that data
+- Only cache the data if it is effective for that data
   - E.g. data that doesn't change that frequently
 - Is it safe? E.g. can it be eventually consistent
 - It is structured well for caching, e.g. key-valur pair
@@ -265,6 +268,9 @@ Various methods to remove data from the cache:
 - Setting a TTL - expired data is evicted, good for cache-aside, not for write-through
 
 ## MemoryDB for Redis
+
+This is when you want to use Redis as your primary database, not just as a cache, and you need strong durability, and can't tolerate data loss.
+“Use ElastiCache when Redis is your performance booster. Use MemoryDB when Redis is your source of truth.”
 
 - Redis compatible, durable, in-memory database service
 - Ultra-fast - 160 million requests per second

@@ -100,7 +100,8 @@ Some notes on rules:
 
 A Layer 4 load balancer, for TCP and UDP, handles millions of requests per second, ultra-low latency.
 
-- NLB has one static IP per AZ, and elastic IPs can be assigned to each AZ. Useful for allow listing - e.g., a company wants to access your website hosted on an EC2 but they need to have the IP of it to allow-list it in their firewall. An ALB generates a fixed hostname, not an IP address.
+- NLB has one static IP per AZ, and elastic IPs can be assigned to each AZ. Useful for allow listing - e.g., a company wants to access your website hosted on an EC2 but they need to have the IP of it to allow-list it in their firewall.
+- An ALB generates a fixed hostname. ALB does also generate a public IP but it is **dynamic** and not static, it can change for example if the ALB is restarted due to AWS maintenance.
 
 ### When to use an NLB?
 
