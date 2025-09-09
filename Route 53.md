@@ -139,7 +139,28 @@ This is how the DNS responds to requests for information, it is not concerned wi
   - Location options: Countries and Continents
   - You should also have a 'Default' record for clients outside of the ones you have Countries/Continents you have specified, otherwise they will not be able to reach your service.
 - Multi-value answer
+  - The DNS record returns contains multiple IPs
+  - Returns up to 8 IPs, so for example you could have 10 EC2 Instances.
+  - If you configure to use a Health check, it will return only IPs for healthy instances.
+  - Example use: external load balancer. The client will determines which IP to use.
 - Geoproximity
+  - Route traffic to resources based on the geographic location of the clients and the region
+  - Define a **bias** to increase/decrease the 'area' of the geographic location to route clients to a region
+  - To expand the area, increase the bias (1 to 99)
+  - To shirnk the area, decrease the bias (-1 to -99)
+  - Resources can be AWS resources, or non-AWS (e.g. on-prem, you need to specific the long/lat for the non-AWS region)
+  - Examples:
+    1. Resources are in 2 regions, bias on both is 0, AWS chooses an 'equal' area in geographic proximity to each region.
+    2. Resources in 2 regions, bias on one is 0, on the other is 50, it increases the geographic area of clients that will now be routed to the resource in the 2nd region.
+  - Uses Route 53 **Traffic Flow** (advanced)
+    - Traffic flow gives a UI for mapping complex flows - for other Routing Policies, not just Geoproximity.
+    - Starting point is the DNS record type
+    - Rules: all the rules above, Latency, Weighted, etc, New Endpoints, and including **Geoproximity**
+      - If you choose Custom Endpoints, you have to enter the long/lat coordinates.
+    - Once you create a Traffic Policy, the Routing Policy target is the Traffic policy.
+- IP Routing
+  - Routing based on CIDR blocks (an IP range)
+  - Configured with multiple lists of CIDRs, to route to a specific target
 
 ### Routing Policy Health Checks
 
@@ -161,3 +182,13 @@ This is how the DNS responds to requests for information, it is not concerned wi
 - For private resource not accessible from the internet, the way to allow health checks to be used, is to create Cloud Watch metrics/alarms for the resource, then base the health check off of the Cloud Watch metric. You will not be able get the health checker to make a request directly to your private resource.
 - Health checks can be enabled on all Routing Policies except Simple. If enable (not Failover), Route 53 won't send traffic to an instance failing a health check.
 - The Failover policy is different, in that is just for having a Primary and Seconday, but you can use Daisy Chaining underneath to combine it with other policies.
+
+## Domain Registrar vs DNS Service
+
+- A Domain Registrar is where you can purchase a Domain, it has a record that points to the Namespace service.
+- A Domain registrar is not a DNS, but usually comes with one.
+- You can configure the domain to use a different DNS, e.g. you buy a Domain with GoDaddy, but use Route 53 as the DNS.
+- To configure:
+  - Buy the domain with a registrar (if not buying through Route 53)
+  - Create a Route 53 public Hosted Zone, Name Servers will be provided for the Hosted Zone
+  - Update the Name Servers on the domain registrator with the Name Servers for the Route 53 DNS Hosted Zone.
