@@ -78,7 +78,7 @@ These are logs that capture all network traffic issues.
 ## VPC Peering
 
 - VPC Peering allows conectivity between two separate VPCs using AWS's network.
-- They act as if there are the same network, so the CIDR ranges of the two VPCs must not be overlapping.
+- They act as if they are on the same network, so the CIDR ranges of the two VPCs must not be overlapping.
 - It is not transitive, meaning that only VPC's directly peered can connect to each other, e.g., VPC 1 is connected to both VPC 2 and VPC 3, does not mean VPC 2 and VPC 3 can connect with each other. The only relationships are VPC 1 to VPC 2, and VPC 1 to VPC 3.
 
 ## VPC Endpoints
@@ -86,7 +86,7 @@ These are logs that capture all network traffic issues.
 - When you connect from an EC2 Instance to other AWS Services, e.g., S3 bucket, CloudWatch, etc. It is going over the public internet.
 - If you want to connect from your private subnet to other AWS Services over the AWS Network (so not over the internet), you need to use a **VPC Endpoint**. This is more secure, and faster.
 - **VPC Endpoint Gateway**: Connects to S3 and DynamoDB
-- **VPC Endpoint Network Interface (ENI)**: Connects privately to all other services, e.g. CloudWatch.
+- **VPC Endpoint Interface**: Connects privately to all other services, e.g. CloudWatch.
 
 ## Site to Site VPN
 
