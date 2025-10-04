@@ -40,7 +40,7 @@ EC2 Instance Metadata is metadata about the EC2 Instance that the EC2 instance c
 
 ## AWS SDK
 
-Software Development Kit (SDK), available in various languages. When using the SDK, if you don't a region or configure a default region when using the SDK, then it will use use-east-1 by default.
+Software Development Kit (SDK), available in various languages. When using the SDK, if you don't a region or configure a default region when using the SDK, then it will use use-east-1 by default. The CLI uses the Python SDK underneath.
 
 ## API Rate Limits
 
