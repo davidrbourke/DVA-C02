@@ -147,3 +147,86 @@ CORS needs to be enabled in Amazon S3 when you want web applications hosted on o
   }
 ]
 ```
+
+## MFA Delete
+
+MFA Delete is an option that can be enabled for S3 buckets so a Multifactor Authentication generated code must be supplied to:
+
+- Permanently delete an object
+- Suspend versioning on the bucket
+
+### Other notes for MFA Delete
+
+- The MFA code is not required for enabling versioning, or listing deleted versions.
+- Versioning must be enabled on the bucket to enable MFA delete.
+- Only the bucket owner (root account) can enable/disable MFA Delete.
+
+### Demo
+
+1. On the S3 Bucket > Properties > Edit bucket versioning
+2. Mutlifactor authentication delete will be disbaled - it cannot be enabled via the Console. Use the CLI.
+3. IAM root account must have an MFA device setup already
+   - From Security Credential - Access Keys: Create an Access Key ID and Secret Access Key for the root device - to configure the CLI.
+4. Configure AWS CLI to use the root account
+
+```
+aws configure --profile root-mfa-delete-demo
+AWS Access Key ID:
+AWS Secret Access Key:
+Default region name:
+
+# enable MFA delete
+aws s3api put-bucket-versioning --bucket {bucketname} --versioning-configuration Status=Enabled,MFADelete=Enabled --mfa "arn-of-mfa-device mfa-code" --profile root-mfa-delete=demo
+
+# delete MFA delete
+aws s3api put-bucket-versioning --bucket {bucketname} --versioning-configuration Status=Enabled,MFADelete=Disabled --mfa "arn-of-mfa-device mfa-code" --profile root-mfa-delete=demo
+
+```
+
+5. Best practice
+
+- Only use the root account to enable/disable MFA Delete
+- Delete the root account local profile after using it
+
+## S3 Access Logs
+
+- Logging all requests into the S3 buckets - logged into another bucket.
+- Target bucket must be in the same region.
+- Enable Access logging
+- Log format: https://docs.aws.amazon.com/AmazonS3/latest/userguide/LogFormat.html
+- Do not set the log bucket to be the same as the monitored bucket, creates a logging loop.
+
+### Demo
+
+1. Create 2 S3 buckets, a source and a logging target.
+2. Source bucket > Properties > Server access logging
+
+- Enable
+- Destination: set to logging target bucket
+  - The target bucket Access Policy will be updated to allow the source to access the target.
+- Log object key format
+
+## S3 Presigned URL
+
+For a scenario where the Users are not part of AWS, and you don't want to make the bucket public. You can generate a pre-signed URL.
+
+- URL Expiration: S3 Console - 1 min to 12 hours, AWS CLI generated: --expire-in seconds to 168 hours
+- The URL inherits the permissions GET/PUT, etc of the AWS User the pre-signed URL was generated under.
+
+## S3 Access points
+
+For a scenario where you have separate directories in the S3 bucket, and you want specific user groups to only access their relevant directories. To avoid creating a complex Access Policy on the S3 bucket, Access points can be used. Access points move the complexity of the access policy away from the bucket and onto the specific access points.
+
+- Each Access point has its own DNS name
+- Each Access point has its own Access policy, e.g., the bucket directory it has read and/or write access to.
+- Users will need the correct IAM policy to access the Access point, they go via the access point and not directly to the S3 bucket.
+- For and EC2 instance in a VPC:
+  - A VPC Endpoints must be created in the VPC with a policy allowing it to access the the Access point
+  - | VPC: EC2 Instance -> VPC Endpoint | Access point (VPC Origin) -> S3 Bucket |
+
+## S3 Object Lamda
+
+For a scenario where some operation needs to be run on the object extracted from the S3 bucket before it is returned, e.g. an additional analytics application needs to get he object with some data redacted. An AWS Lambda can be used, the analytics application requests to the AWS Lambda, the AWS Lamdba extracts the object and redacts the data, and returns the redacted object. There are access points between each resource:
+
+- User application -> S3 Object Lambda Access Point -> AWS Lambda -> S3 Access Point -> S3 Bucket.
+- In this scenario, multiple different lambdas can be setup to perform operations on the S3 Bucket object, without having to maintain separate modified copies of the Object.
