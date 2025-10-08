@@ -83,3 +83,56 @@ This is where you want headers, query string, cookies forwarded to the Origin bu
   - All
 
 - Supports Custom or Managed policies provided by AWS.
+
+## Cache Invalidations
+
+Cached content at Edge locations expires with the TTL. If you update Origin content, the Edge location won't know. You can invalidate the cache in the AWS Console CloudFront Disribution. Options are to:
+
+- Invalidate the entire cache (e.g. using \*)
+- Invalidate specific files (e.g. index.html)
+- Invalidate specified paths, (e.g. /images/\*)
+
+When you create the invalidations, you set the object path to invalidate and run it, and wait for it to complete invalidating the cache.
+
+## Cache Behaviours
+
+For when you have multiple different Origins, or you want different cache behaviours for different URL patterns;
+
+- /api/\* -> ALB
+- /images/\* -> S3 bucket
+- /\* -> EC2 Instance (/\* is the default behaviour - this is always the last to be processed after more specific patterns)
+
+### Cache Behaviours - Use Cases
+
+1. Sign-in Scenario
+   - /login path routes to an EC2 Instance to get a sign-in Cookie
+   - /\* paths route to Static content in an S3 that requires the Cookie
+2. Separating static from dynamic
+   - Requests to S3 static content have no specific caching rules - so all content is cached
+   - Requests to Dynamic content (EC3 Intance) require more specific caching, so cache based on headers, etc.
+
+## Caching - Demo
+
+Prerequesites: CloudFront and S3 setup from **CloudFront Demo**
+
+1. CloudFront > Distribution > Behaviors
+2. Edit default behaviour - (\*):
+3. Cache key and origin requests
+   - Cache Key Policy - create: these cache keys are passed to the Origin
+     - Name
+     - TTL
+     - Cache Key setting:
+       - Headers
+       - Query String
+       - Cookies
+   - Origin request policy - create: these are not cache keys, but passed to Origin
+     - Name
+     - Origin request setting:
+       - Headers
+       - Query String
+       - Cookies
+4. Create a new behaviour
+   - Path pattern e.g. /images/\*
+   - Origin - S3, EC2 Instance, etc
+   - etc.
+   - This one is more specific so would be processed before the default (\*)
