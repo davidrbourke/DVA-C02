@@ -34,7 +34,7 @@ Prerequesites: Create an S3 bucket with index.html and images. Do not make it a 
 5. Select bucket/origin
 6. Origin path is where content is stored
 7. Settings
-   - Allow privaate S3 bucket access to CloudFront - checked - CloudFront will create the Access Policies on the S3 bucket to be able to access it.
+   - Allow private S3 bucket access to CloudFront - checked - CloudFront will create the Access Policies on the S3 bucket to be able to access it.
    - Use recommended origin settings
 8. WAF rules - don't need to enable
 
@@ -136,3 +136,80 @@ Prerequesites: CloudFront and S3 setup from **CloudFront Demo**
    - Origin - S3, EC2 Instance, etc
    - etc.
    - This one is more specific so would be processed before the default (\*)
+
+## VPC Origins
+
+Route traffic though CloudFront to VPCs without having to expose them directly to the internet:
+
+- ALB
+- NLB
+- EC2 Instances
+
+You don't need public IPs for the resources in the VPC.
+
+## CloudFront Geo Restictions
+
+You can restrict access to the distrubtions, using either:
+
+- Allow List - approved countries
+- Block List - blocked countries
+
+Uses a 3rd-party Geo-IP database.
+
+### Demo
+
+1. In Cloud Distribution > Security
+2. Security - WAF
+   - CloudFront geographic restrictions
+   - Setup countries on blocked or allow list
+
+## Signed URL and Cookies
+
+Similar to signed url with S3 bucket files, you can allow access to content with a signed-url or cookie:
+
+- Set the expiry: minutes to years
+- Signed URLs: for when you want a unique signed url per file - the signed Url is only ever for a single file.
+- Signed Cookies: for when you want to give access to multiple files.
+- Different from S3 signed URL, in that S3 signed URL assumes access level of the IAM user who generated it, CloudFront signed URL allows access to the path no matter who signed it.
+
+## Signed URL/Cookie flow
+
+1. User authorised and authenticated though an application (we have to build).
+2. The application requests the signed URL from CloudFront
+3. The application returns the signed URL to the user
+4. The user can use the signed URL to request the content through CloudFront.
+
+### Creating Signed URLs
+
+- Two key signers:
+  - Trusted key group (recommended) - can use APIs to create and rotate keys
+  - AWS account CloudFront key pair - manage keys using the root acount and AWS Console (not recommended)
+- In CloudFront distribution, create 1+ trusted key groups
+- Generate a public/private key pair:
+  - Private key in your application generate the signed URL
+  - Public key is used by CloudFront to verify the signature - the public key is added to the Trusted key group
+
+## CloudFront Pricing
+
+- Cost of data out of an edge location varies by location
+- Price classes vary by the Edge locations that are included:
+  - All: most expensive, all Edge locations
+  - 200: most regions but excludes the most expensive
+  - 100: least expensive regions (includes USA and Europe)
+
+## Origin Groups
+
+This is for high-availability and failover. You set a Primary and Secondary origin, if the primary fails, CloudFront retries the secondary origin for the content.
+Using this with S3 buckets, you can also setup the Primary and Secondary S3 buckets in different regions with replication enabled, to get region level DR for S3 buckets.
+
+## Field level encryption
+
+- Additional security on-top of HTTPs encryption
+- When data is sent in a POST request from a user to the Edge location, a public key on the Edge location encrypts up to 10 fields in the request (e.g. customer account no.)
+- The data sent onwards through to the AWS infrastructure to the Origin, e.g. via Amazon CloudFront > ALB > EC2 Instance has been encrypted (on top of HTTPS), and a private key in the application on the EC2 instance can decrypt the fields.
+
+## CloudFront realtime logs
+
+- Information about real-time requests to CloudFront can be logged to Kinesis Data Streams
+- Can get all traffic, or filter traffic (sampling rate % of traffic)
+- Can select specific fields and cache behaviours to filter into Kinesis
