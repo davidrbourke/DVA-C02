@@ -110,8 +110,8 @@ Docker container launched on ECS - EC2 Launch Type:
   - OS Architecture, e.g. Linux
   - CPU, e.g. .5 vCPU
   - Memory, e.g. 1 GB
-  - Task role (permission if container needs to use AWS services)
-  - Task execution role (auto-created)
+  - Task role (permission if container needs to use AWS services, e.g. you app needs to access an S3 bucket)
+  - Task execution role (auto-created, used by container agent to make AWS API requests on your behalf)
 - Container details
   - Name
   - Image URI - to pull from the Docker hub
@@ -210,3 +210,215 @@ When you want to update the version of your Tasks, e.g. updated image, you can d
 
 4. Intercept Tasks using Event Bridge
    Event Bridge can be used to watch for Events in ECS, e.g. a stopped Task, Event Bridge can be configured to perform some action, e.g. email an Admistrator.
+
+## ECS Task Definitions
+
+- Tasks are defined with a JSON file (UI helper in the AWS Console) to tell ECS how to run the Docker container.
+- 10 contatiners max per Task definition
+- Json definition contains:
+  - Image name
+    - Essential container (Yes/no) - at least 1 container must be an essential container, if an essential container stops, the Task will be stopped.
+    - Registry - can be a public or private repository
+  - Port binding for container and host, e.g. container running Apache on port 80, host port 8080 can map to 80. Via the internet you would use Port 8080.
+  - Memory and CPU
+    - You can configure limits per container on how much of the Task Cpu and memory it can use.
+  - Environment varibles
+  - Networking
+  - IAM Role
+  - Logging configuration
+
+### Load balancing - EC2 Launch Type
+
+- If you don't define host ports and only container ports for the ECS Tasks, Dynamic Host Port Mapping is used where a host port number is assigned. E.g. 36789, etc.
+- Using ALB (doesn't work for Classic LB), the ALB can find the Task ports on the EC2 Instances.
+- The Security Group for the EC2 Instance running the Tasks must allow **any** ports from the ALB, as it doesn't know what they will be.
+
+### Load balancing - Fargate Launch Type
+
+- Each Task has a unique IP
+- For Fargate definitions, you don't define a host port, only a container port, e.g. 80
+- An Elastic Network Interface (ENI) is automatically created for each Task (with unique private IP) - you need to allow the container port on the ENI Security group from the ALB
+- ALB Security group: Allow port 80/443 from the web.
+
+### Task IAM Role
+
+- The IAM Role for the Task's permissions (e.g. Access S3 bucket) are defined at the **Task Definition** level.
+- All the containers/services covered by the Task definition will use this same IAM Role.
+- To use a different role for other containers/services, they will need to be configured with a different task definition.
+
+### Environment Variables
+
+- Environment variable, options;
+  - Hardcode in the Task Definition, e.g. for fixed insecure data, e.g. URLs
+  - Pull from a secrets manager on Task startup:
+    - SSM Parameter Store
+    - Secrets Manager
+- Environment files - you can load a full set of environment file from an S3 bucket, called Bulk load.
+
+### Data Volumes (Bind Mounts)
+
+- Share data between multiple containers
+- You can mount from an EFS for persistent storage, for temporary storage you can use a file system:
+  - EC2 Tasks - using EC2 Instance Storage, data is tied to the lifecyle of the EC2 instance.
+  - Fargate Tasks - using ephemeral storage, data is tied to the container lifecyle, size: 20 GiB (default) to 200 GiB.
+- Use cases:
+  - Share temporary data between containers
+  - Side car container pattern, e.g. to send logging data to some other destination, main container writes to the storage, sidecar container reads from the storage and pushes the logs elsewhere.
+
+## ECS Task Placements
+
+Task placement concerns which EC2 Instance the Task is placed on, this is for EC2 Instance Launch types only. Fargate Launch Types, the instance placement is handled by Fargate. You can define a Placement Strategy and Placement Constraints, ECS will make a best effort to place the Task within the Strategy and Constraints.
+
+### Task Placement Process
+
+1. Identify the instances that satisfy CPU, memory, and port requirements in Task Definition.
+2. Identify the instances that satisfy the Placement Constraints
+3. Identify the instances that satisfy the Placement Strategies.
+4. Select the instances for task placement.
+
+### Task Placement Strategies
+
+How tasks are distributed:
+
+1. Binpack - place the task on the container with the least amount of available CPU and or memory. Minimises the no. of instances required/used and saves cost.
+
+```
+"placementStrategy": [
+  {
+    "field": "memory",
+    "type": "binpack"
+  }
+]
+```
+
+2. Random - places the task randomly.
+
+```
+"placementStrategy": [
+  {
+    "type": "random"
+  }
+]
+```
+
+3. Spread - place the task evenly across instances based on a specified value, e.g., availabiliy-zone - the tasks would be placed evenly across Instances in different availability zones. Can have multiple spread values. For exmaple with the one below: Tasks will first be spread across zones and instances, then packed within those constraints to optimize memory usage.
+
+```
+"placementStrategy": [
+  {
+    "field": "attribute:ecs.availability-zone",
+    "type": "spread"
+  },
+  {
+    "field": "instanceId",
+    "type": "spread"
+  },
+  {
+    "field": "memory",
+    "type": "binpack"
+  }
+]
+```
+
+### Task Placement Constraints
+
+Where tasks are allowed to run.
+
+- distinctInstance - place each task on different container instance
+
+```
+"placementConstraints": [
+  {
+    "type": "distinctInstance"
+  }
+]
+```
+
+- memberOf - places tasks based on expression using Cluster Query Language
+
+```
+"placementConstraints": [
+  {
+    "expression": "attribute:ecs.instance-type =~ t2.*,
+    "type": "memberOf"
+  }
+]
+```
+
+## Elastic Container Registry (ECR)
+
+- Can store docker images in AWS in ECR
+- Private and Public repos, public gallery is https://gallery.erc.aws
+- Access from ECS to ECR controller via IAM
+- ECR supports various admin tasks; image vulnerability scanning, versioning, image tagging, etc.
+
+### ECR Commands to pull/push images to ECR
+
+You need to login Docker on the command line with the AWS ECR credentials and account details (vars: aws_account_id, region).
+`aws ecr get-login-password --region eu-west-1 | docker login --username AWS --password-stdin aws_account_id.dkr.ecr.eu-west-1.amazonaws.com`
+Docker commands
+`docker push aws_account_id.dkr.ecr.region.amazonaws.com/imagename:latest`
+`docker pull aws_account_id.dkr.ecr.region.amazonaws.com/imagename:latest`
+`docker build -t imagename .`
+`docker tag image/name:latest aws_account_id.dkr.ecr.eu-west-1.amazonaws.com/new-image-name:latest` - the tag needs the repository name
+
+## AWS CoPilot
+
+This is a CLI tool to help with building and releasing containerised apps on AppRunner, ECS and Fargate.
+
+- Provisions all the required infrastructure
+- Simplifies setup of environments so dev can focus on the app
+- Can create automated pipelines using CodePipline
+- CoPilot assumes various defaults/best practice, you can set specific configuration in manifest.yml files that get generated for the application's CoPilot configuration.
+- Flow:
+  - YAML or CLI of application architecture ->
+  - AWS CoPilot -> Prepares well-architectured infrastructure setup config files ->
+  - **CloudFormation** deploys in ECS, Fargate or App Runner.
+
+```
+https://github.com/aws-samples/aws-copilot-sample-service
+To deploy this app, clone this repo and then run:
+
+copilot init --app demo \
+  --name api \
+  --type "Load Balanced Web Service" \
+  --dockerfile "./Dockerfile" \
+  --deploy
+Copilot will set up the following resources in your account:
+
+A VPC
+Subnets/Security Groups
+Application Load Balancer
+Amazon ECR Repositories
+ECS Cluster & Service running on AWS Fargate
+```
+
+## AWS EKS
+
+Elastic Kubernetes Service (EKS), open source alternative to EKS.
+
+- Supports EC2 Instance and Fargate Launch Types
+- Use if you are migrating from Kubernetes on-prem or another cloud provider, it is cloud agnostic.
+- EKS Nodes are EC2 Instances, running EKS Pods
+- Pods are EKS equivalent of Tasks
+
+### EKS Node Types
+
+- Managed Node Groups
+  - EC2 instances (Nodes) are created and managed for you
+  - Nodes are part of an ASG, support On-Demand and Spot instances
+- Self Managed Nodes
+  - You create the Nodes and register them to the EKS cluster
+  - Nodes are also part of an ASG, support On-Demand and Spot instances
+- AWS Fargate
+  - You don't manage the nodes or instances
+
+### EKS Data Volumes
+
+- For persistent data storage from EKS
+- Assign a Storage Class manifest YAML on your EKS Cluster
+- Uses Container Storage Interface (CSI) complaint driver, so the following storage can be used:
+  - EBS
+  - EFS (for Fargate)
+  - FSx for Lustre
+  - FSx for NetApp ONTAP

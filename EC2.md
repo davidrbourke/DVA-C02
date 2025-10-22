@@ -124,7 +124,7 @@ For this a role was create in IAM for EC2 called DemoRoleForEC2 and assigned to 
 - Purpose: For short-term uninterrupted unpredictable workloads
 - Cost: highest cost
 - Details: Predictable pricing.
-- Payment: Billing per second, after the 1st minute, no upfront payment.
+- Payment: Billing per second, after the 1st minute no upfront payment.
 - Reservation period: None
 
 ### Reserved Instances (1 & 3 years)
