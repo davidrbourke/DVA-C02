@@ -1,4 +1,4 @@
-- # CloudFormation
+# CloudFormation
 
 CloudFormation (CF) allows you to define you AWS infrastructure in code; Infrastructure as Code.
 
@@ -416,3 +416,92 @@ Outputs:
 | `Fn::FindInMap`    | `!FindInMap`   | Looks up a value from a `Mappings` section using keys             |
 | `Fn::ImportValue`  | `!ImportValue` | Imports a value exported from another stack                       |
 | `Fn::Base64`       | `!Base64`      | Encodes a string to Base64, often used in `UserData` for EC2      |
+
+## CF Rollbacks
+
+- When deploying a stack update, you set the failure option. So the rollback happens automatically based on your selection.
+- Stack creation failure options:
+  - Default: rollback all to the last working state
+  - Option: disable so you can investigate the deployment errors.
+    - Use `Preserve successfully deployed resources` option.
+- Rollback failures
+  - Might be because of manual changes to the stack that you need to manually fix something.
+  - once fixed, you can instruct the the rollback to continue (from the CLI, API or AWS Console)
+- CF Events will show what failed
+- If it is the initial deployment that failed, you can delete the entire stack, no previous state to rollback to.
+
+## CF Service Role
+
+User may not have permission to AWS resources to update them via the CF.
+
+- Create **IAM Service Roles** for CF so it has permission on behalf of the user.
+- User must have **IAM:PassRole**
+- When creating the stack, use the optional IMA Role setting to choose the IAM Service Role.
+
+## CF Capabilities
+
+When CF is required by the template to create any IAM Resources, you must specify Capabilities:
+
+- **CAPABILITY_NAME_IAM** - if resources or are named.
+- **CAPABILITY_IAM**
+- **CAPABILITY_AUTO_EXPAND** - when template has macros or nested (dynamic) stacks
+
+If your CF stack doesn't have permission you will get an **InsuffientCapabilitiesException**.
+
+## CF Deletion Policy
+
+Control what happens to a resource if you delete the stack or update the stack with a template that removes a resource.
+
+- Declare in the template YAMl, on the resource object:
+
+  - These work for all AWS resources:
+    - Default is: DeletionPolicy=Delete
+    - Keep: DeletePolicy=Keep
+  - This works for specific resources, e.g. RDS:
+    - Snapshot: DeletionPolicy=Snapshot, this will take a final snapshot before deletion happens.
+
+Note: Some resources will fail to delete, e.g. an S3 bucket that is not empty. You will need some automation to delete the bucket content first (see **Custom Resources**).
+
+## CF Stack Policies
+
+- Default: all stack resources can be updated.
+- Policy: JSON file to control what can/cannot be updated.
+- Goal is to protect from accidental updates.
+
+- Example - this will prevent updating the database:
+
+```
+{
+  "Statement": [
+    {
+      "Effect": "Deny",
+      "Action": "Update:*",
+      "Principal": "*",
+      "Resource": "LogicalResourceId/ProdDBInstance"
+    },
+    {
+      "Effect": "Allow",
+      "Action": "Update:*",
+      "Principal": "*",
+      "Resource": "*"
+    }
+  ]
+}
+```
+
+## CF Termination protection
+
+- Enabled in the Console to prevent accidental deletion of the entire stack.
+- CF > Stack > Actions > Enable termination protection
+- This can be disabled if you are certain you want to delete the stack.
+
+## Custom Resources
+
+Use:
+
+- When a resource is not supported by AWS CloudFormation
+- When needing to run a custom script, e.g. call an AWS Lambda to delete objects in an S3 bucket before deletion in the stack.
+
+## CF Stack Sets
+
+Stack sets allow for Create, update, and delete operations across multiple accounts and regions simultaneously. Only Admin users can create these.
