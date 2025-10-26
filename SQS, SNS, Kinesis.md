@@ -261,6 +261,7 @@ Must know for exam:
 - - If need ordering across all messags, then use the same parameter
 - If you need ordering within specific groups, then provide unique parameter for each group of messages.
 - E.g. if you want ordering for each customer's messages, then add the customer ID as the message grouping ID.
+- For SQS FIFO, the maximum number of consumers that can simultaneously process messages from the SQS FIFO queue is **equal** to the number of message groups you defined. Each consumer can only handle messages from a single message group at a time, so with 10 message groups, you can support up to 10 consumers concurrently.
 
 ## Simple Notification Service (SNS)
 
@@ -362,3 +363,264 @@ Example message with orderStatus:
   }
 }
 ```
+
+## Kinesis Data Streams
+
+Collect and store streaming **real-time** data.
+
+- Click-streams initiated by a user
+- IoT Devices
+- Metrics and Logs
+
+### Producers
+
+- Applications - take data from app and send in real-time into Kinesis
+- Kinesis Agent can do this for some services
+
+- Because we want something to react to the data in real-time: Consumers
+
+### Consumers
+
+- An Application
+- Lambda
+- Amazon Data Firehose
+- Managed service for Apache Flink
+
+### Features
+
+- Data can be retained for up to 365 days
+- Can reprocess (replay) data by consumers
+- Data can't be deleted from Kinesis until it expires
+- Data up to 1MB
+- Typically lots of smaller data
+- Data order guarantee for data with same **Partition ID**
+- Encryption:
+  - KMS for at-rest
+  - HTTPS for in-flight
+- Code Libraries:
+  - Kinesis Producer Libray (KPL) - for Producer application
+  - Kinesis Client Library (KCL) - for Consumer application
+
+### Capacity Modes
+
+- Provisioned mode:
+
+  - Choose number of shards (related to size of stream)
+  - 1 MB/s or 1,000 records p/s per shard
+  - 2 MB/s out traffic per shard
+  - Scale up to more shards to increase performance
+  - Scale in/out number of shards manually
+  - Pay per shard per hour
+
+- On-demand mode:
+  - You don't provision or manage capacity
+  - Default capacity is 4 MB/s, or 4,000 records per second (equivalent for 4 shards)
+  - 8 MB/s read/out
+  - Scales automatically - using throughput metric peak within last 30 days
+    - Max scale is equivalent of 10 shards
+  - Pay per stream per hour AND data in/out per GB
+
+### Demo
+
+- Kinesis > Data Streams
+- Name
+- Capacity modes:
+  - On-demand
+  - Provisioned
+    - Select no. of shards - can use shard estimator tool
+- Create - once created:
+- Applications menu:
+
+  - Producers:
+    - Amazon Kinesis Agent - uses a standalone Java application on application servers to send data to the stream
+    - AWS SDK - use Java to develop producers at low level
+    - Amazon Kinesis Producer Library (KPL) - to develop producers at a high level with better API
+  - Consumers:
+    - Amazon Kinesis Data Analytics - process and analyse using SQL or Java
+    - Amazon Kinesis Data Firehose - process and store records in a destination
+    - Amazon Kinesis Client Libray (KPL) - client library to develop consumer applications
+      - Note: When using Kinesis Client Library, each shard is to be read-only by one KCL instance (on an EC2 instance). So if you have 10 shards, the the maximum KCL instances you can have is 10 (so 10 EC2 instances).
+  - Monitoring
+  - Configuration - Scale
+  - Enhanced fan-out - consumers can use the enhanced fan out facility
+
+- Use Terminal or CLI in AWS Console Cloudshell
+
+  - `aws --version` Use version 2
+  - Write to stream using `put-record`:
+  - V1:
+
+  ```
+    aws kinesis put-record \
+    --stream-name my-stream-name \
+    --partition-key my-partition-key \
+    --data "my-payload-data"
+  ```
+
+  - V2:
+
+  ```
+  aws kinesis put-record \
+  --stream-name my-stream-name \
+  --partition-key my-partition-key \
+  --data "my-payload-data" \
+  --cli-binary-format raw-in-base64-out
+  ```
+
+  - To Consume, need to get Shard Id when using CLI (handled by SDK if that is used instead):
+
+  ```
+  aws kinesis describe-stream \
+    --stream-name my-stream-name
+  ```
+
+  - To consumer data, create a shard interator:
+
+  ```
+  aws kinesis get-shard-iterator \
+  --stream-name my-stream-name \
+  --shard-id shardId-000000000000 \
+  --shard-iterator-type TRIM_HORIZON
+  ```
+
+  - Fetch data using shard iterator:
+
+  ```
+  aws kinesis get-records \
+    --shard-iterator <your-shard-iterator-token> \
+    --limit 100
+  ```
+
+  - Other --shard-iterator-type options:
+
+    - TRIM_HORIZON: start from the oldest record
+    - LATEST: start from the newest record
+    - AT_TIMESTAMP: start from a specific timestamp
+    - AFTER_SEQUENCE_NUMBER: start after a specific record
+
+  - Example of data returned:
+
+  ```
+  {
+    "Records": [
+      {
+        "SequenceNumber": "49590338271490256608559692538361571095921575989136588898",
+        "ApproximateArrivalTimestamp": 1633024800.123,
+        "Data": "eyJ1c2VySWQiOiAiMTIzIiwgImV2ZW50IjogInNpZ25pbiJ9",
+        "PartitionKey": "user-123"
+      },
+      {
+        "SequenceNumber": "49590338271490256608559692538361571095921575989136588899",
+        "ApproximateArrivalTimestamp": 1633024801.456,
+        "Data": "eyJ1c2VySWQiOiAiNDU2IiwgImV2ZW50IjogInNpZ25vdXQifQ==",
+        "PartitionKey": "user-456"
+      }
+    ],
+    "NextShardIterator": "AAAAAAAAAAH6J5Wv...truncated...",
+    "MillisBehindLatest": 0
+  }
+  ```
+
+  - Can contiue to read using created shard iterator but use different shard-iterator type to get continuing data.
+
+## Amazon Data Firehose
+
+A service to send data from sources into target destinations.
+
+- Various producers can push data to Firehose
+- Or some services Firehose can pull data (Kinesis Data Streams, CloudWatch, AWS IoT)
+- 1 MB per record max
+- Data accumulated into a buffer in Firehouse
+- Buffer is flushed to send batches of data into target destinations:
+  - AWS First:
+    - S3, Redshift, OpenSearch **(need to know these)**
+  - 3rd party:
+    - Datadog, splunk, mongoDB, new relic
+  - HTTP Endpoints
+    - For when a service is not supported.
+- Firehose can use Lamda functions if data transformation is needed
+- Option available to write all or failed data into an S3 bucket for a backup.
+
+### Features
+
+- Fully managed
+- Automatic scaling, serverless, pay for what you use
+- Near real-time with buffering based on size/time, there is a delay because of filling the buffer and waiting for it to be flushed.
+- Data formats: CSV, JSON, Parquet, Avro, Raw Text, Binary data
+- Convert data to Parquet/ORC, compression with gzip/snappy
+- Custom transformation: using Lambda, e.g. change from CSV to JSON, etc
+
+### 📊 Kinesis Data Streams vs Kinesis Data Firehose
+
+| Feature                 | Kinesis Data Streams                              | Kinesis Data Firehose                               |
+| ----------------------- | ------------------------------------------------- | --------------------------------------------------- |
+| **Use Case**            | Real-time custom processing                       | Near real-time delivery to storage/analytics        |
+| **Latency**             | Sub-second                                        | Typically 60 seconds (buffered)                     |
+| **Data Retention**      | Up to 365 days (default 24 hours)                 | No retention; data is delivered immediately         |
+| **Replay Capability**   | ✅ Yes — reprocess using shard iterators          | ❌ No — data cannot be replayed once delivered      |
+| **Consumer Model**      | Pull-based (apps poll for data)                   | Push-based (auto delivery to destinations)          |
+| **Destinations**        | Custom apps, Lambda, Analytics, Firehose          | S3, Redshift, OpenSearch, Splunk, HTTP endpoints    |
+| **Transformation**      | Custom via consumer apps or Lambda                | Built-in via Lambda preprocessing                   |
+| **Scaling**             | Manual (shard-based) or On-Demand mode            | Automatic                                           |
+| **Throughput Limits**   | Shard-based: 1 MB/s or 1,000 records/s per shard  | Up to 5,000 records/s or 5 MB/s per delivery stream |
+| **Ordering Guarantees** | Per shard                                         | No strict ordering                                  |
+| **Encryption**          | Server-side (KMS), client-side supported          | Server-side (KMS)                                   |
+| **Monitoring**          | CloudWatch metrics, enhanced monitoring optional  | CloudWatch metrics                                  |
+| **Pricing Model**       | Based on shard hours and PUT payloads             | Based on data volume and transformation             |
+| **Setup Complexity**    | Requires stream management and consumer logic     | Simple setup, minimal configuration                 |
+| **Ideal For**           | Custom stream processing, analytics, ML pipelines | ETL pipelines, log delivery, data lake ingestion    |
+
+### Demo Firehose
+
+- Amazon Kinesis Data Firehose
+- Source:Data streams
+- Destination: S3
+- Browse and choose Stream (from previous demo)
+- Transform: can setup using lamda functions
+- Convert record format into Parquet or ORC
+- Destination settings:
+
+  - S3 bucket - created or create one
+  - Dynamic partitioning
+  - S3 bucket prefix (optional) - default is a data format - can be overriden
+  - S3 bucket error output prefix (optional) - for errors (/errors)
+  - S3 buffer hints - size of buffer before flushing
+    - Buffer size, default 5MiB, 1MiB to 128MiB.
+    - Buffer interval, how fast to flush if buffer doesn't fill up, default 300 seconds, but 60 to 900 seconds
+  - S3 compression and encryption - e.g., gzip message into target to safe space
+    - Option to encrypt records
+  - Permissions:
+    - Create or select IAM role for Data Firehose to write data into S3 bucket
+
+- Menus tabs
+- Monitoring
+- Config
+- Logs
+- Send data to the Data Stream from demo 1 using the CLI
+  - Data previously send to the Stream will not go into Firehose, only new data while Firehose is active
+  - Need to wait for buffer to flush and then object will appear in S3 bucket.
+
+## Apache Flink
+
+- Framework used for processing data streams (Java, Scala or SQL)
+- Managed service
+- Two sources feed into it:
+  - Kinesis Data Streams
+  - Amazon MSK (Apache Kafka)
+  - **Does NOT read from Amazon Data Firehose**
+- Managed service, runs on a managed cluster; compute resource with auto-scaling, parallel computation, AWS manages backups (checkpoints/snapshots)
+- Use any Flink feature to transform data
+
+## SQS vs SNS vs Kinesis
+
+| SQS                                             | SNS                                                  | Kinesis                                         |
+| ----------------------------------------------- | ---------------------------------------------------- | ----------------------------------------------- |
+| Consumer "pull data"                            | Push data to many subscribers                        | Standard: pull data, 2MB per shared             |
+| Can have as many workers (consumers) as we want | Up to 12,500,000 subscribers                         | Enhanced-fan out: push data 2MB per shard       |
+|                                                 | Up to 100,000 topics                                 |                                                 |
+| Data is deleted after being consumed            | Data is not persisted (lost if not delivered)        | Possibilty to replay data                       |
+|                                                 |                                                      | Data expires after X days                       |
+|                                                 | Pub/Sub                                              | Meant for real-time big data, analytics and ETL |
+| No need to provision throughput                 | No need to provision throughput                      | Provided mode or on-demand capacity mode        |
+| Ordering guarantees only on FIFO queues         | FIFO capability for SQS FIFO                         | Ordering at the shard level                     |
+| Individual message delay capability             | Integrates with SQS for fan-out architecture pattern |                                                 |
