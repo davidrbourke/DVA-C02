@@ -1,11 +1,11 @@
 # Integration and Messaging
 
-There will be a lot of question on this topic, expecially SQS.
+There will be a lot of question on this topic, especially SQS.
 Applications need to share data, to communicate with each other.
 
 ## Patterns
 
-- Syncrhonous: app to app direcly, e.g. via HTTP
+- Synchronous: app to app directly, e.g. via HTTP
   - spikes: one service can overwhelm the other with too many requests
 - Asynchronous: event based, via some middleware service, e.g. a queue
   - spikes: decouple and scale the middleware with, e.g SQS, SNS, Kinesis
@@ -20,13 +20,13 @@ Applications need to share data, to communicate with each other.
 - SQS is the standard queue
 - Fully managed
 - Attributes
-  - Unlimted throughput
+  - Unlimited throughput
   - Unlimited no. of messages in the queue
   - Short lived messages, default retention is 4 days in the queue, max: 14 days
   - Low latency < 10ms
   - Small messages: limited to 256KB per message
 - Can have duplicate messages (at least once delivery)
-- Can have out of order messaages (best effort ordering)
+- Can have out of order messages (best effort ordering)
 
 ### SQS Message Producers
 
@@ -37,12 +37,12 @@ Applications need to share data, to communicate with each other.
 
 - Consumers are Applications, e.g. running EC2 instance, on-prem servers, Lambdas
 - Polls SQS for messages
-- Can received upto 10 messages per request
+- Can received up to 10 messages per request
 - Consumer then processes the message, e.g. does some action, write to DB, etc
-- Once processed, consumer then deletes the message (DeleteMessage API)
+- Once processed, consumer then deletes the message (`DeleteMessage` API)
 - Can have multiple consumers at a time, each consumer receives a different set of messages
 - To increase throughput, scale up Consumers, e.g. with Auto-scaling groups for EC2 instance
-  - Metric: ApproximateNumberOfMessage (queue length)
+  - Metric: `ApproximateNumberOfMessages` (queue length)
   - Set up CloudWatch alarm based on metric
   - ASG will scale up based on the CloudWatch alarm
 
@@ -65,14 +65,14 @@ Applications need to share data, to communicate with each other.
   - FIFO Queue
 - Standard Queue
   - Configuration
-    - **Visibility timeout**: default 30 secs, set between 0 seconds to 12 hours.
+    - `Visibility timeout`: default 30 secs, set between 0 seconds to 12 hours.
     - Message retention in days
     - Max message size 1KB to 256KB
-    - Received message wait time
+    - Received message wait time - to set for Short or Long polling for the entire queue
   - Encryption
     - Disabled
     - Enabled
-      - Enrcryption Key (AWS SQS Key, or AWS Key Management)
+      - Encryption Key (AWS SQS Key, or AWS Key Management)
   - Access Policy, Basic vs Advanced
     - Generates a JSON document for Policy
     - Basic - define who can send/receive messages from the queue:
@@ -87,10 +87,12 @@ Applications need to share data, to communicate with each other.
 
 - JSON IAM Policies
 
-  1. To allow cross account access, e.g. so an EC2 Instance in another account can access the Queue.
+#### EC2 to SQS Cross Account
 
-  - Principal: The IAM role in Account B that the EC2 instance assumes (EC2SQSAccessRole). -
-  - Resource: The ARN of the SQS queue in Account A.
+To allow cross account access, e.g. so an EC2 Instance in another account can access the Queue.
+
+- Principal: The IAM role in Account B that the EC2 instance assumes (EC2SQSAccessRole).
+- Resource: The ARN of the SQS queue in Account A.
 
 ```
 {
@@ -115,9 +117,9 @@ Applications need to share data, to communicate with each other.
  }
 ```
 
-2. Allow an S3 bucket to publish events to an SQS Queue
+#### S3 Bucket to SQS Queue
 
-- In the S3 Bucket, you set up an Event notification to send to the SQS Queue.
+Allow an S3 bucket to publish events to an SQS Queue. In the S3 Bucket, you set up an Event notification to send to the SQS Queue.
 
 ```
 {
@@ -146,7 +148,7 @@ The EC2 example uses `"AWS"` as the principal because it's an IAM role (a human-
 
 ### Message Visibility Timeout
 
-When a message is read by a consumer, this is the timeout value for how long the message cannot be read by another consumer, the consumer must delete the message as 'processed' before this timeout ends, else another consumer will receive the message.
+When a message is read by a consumer, this is the timeout value for how long the message cannot be read by another consumer, the consumer must delete the message as 'processed' before this timeout ends, otherwise another consumer will receive the message.
 
 - A message not processed fully during the timeout, will be read twice or more.
 - If a consumer needs more time, it should call the `ChangeMessageVisibility` API to get more time.
@@ -156,15 +158,15 @@ When a message is read by a consumer, this is the timeout value for how long the
 
 If a consumer keeps processing a message and it fails and keeps going back into the queue, you can set a threshold for how many times the message can go back into the queue.
 
-- Set a **MaximumReceives** threshold, if it is exceeded, the message goes into the DLQ and it not processed again.
+- Set a `MaximumReceives` threshold, if it is exceeded, the message goes into the DLQ and it not processed again.
 - Allows debugging of something that might be wrong with this message.
 - Set a long retention, e.g. 14 days before messages expire from the DLQ so you have time to investigate them and they are not lost.
-- DLQ of SQS Queue must be the same type, e.g. Standard queue -> Standard DLQ, FIFO -> FIFO.
+- DLQ of SQS Queue must be the same type, e.g. Standard queue -> Standard DLQ, FIFO queue -> FIFO DLQ.
 
 #### Demo DLQ
 
 1. You create a new Queue for the DLQ.
-2. In your source Queue config, you can set the DLQ created as the target for the DQL and set the **Maximum Receives** value.
+2. In your source Queue config, you can set the DLQ created as the target for the DQL and set the `Maximum Receives` value.
 3. In AWS Console, in DLQ, there is an option **Start DQL Redrive**
    - You have to select the source queue to push the messages back to.
 
@@ -176,10 +178,10 @@ After debugging, you may need to update your application code to handle messages
 
 Delay messages so that consumer don't see them immediately
 
-- Default is 0 seconds
+- Default is 0 seconds - no delay
 - Enabled - two ways:
   - Can set default at queue level
-  - Or set a per message delay using the **DelaySeconds** parameter
+  - Or set a per message delay using the `DelaySeconds` parameter
 
 ### Long Polling
 
@@ -188,10 +190,10 @@ When polling, when the Consumer requests messages, you can wait for a period if 
 - Results in less API calls
 - Will get messages a soon as one arrives (decreasing latency)
 - Set between 1 to 20 seconds
-- Prefereable over Short polling
+- Preferable over Short polling
 - Enabled - two ways:
   - At Queue Level
-  - At the API level using **ReceiveMessageWaitTimeSeconds** when Consumer requests to read.
+  - At the API level using `ReceiveMessageWaitTimeSeconds` when Consumer requests to read.
 
 ### SQS Extended Client
 
@@ -200,11 +202,11 @@ For sending large messages beyond 256KB.
 - Uses an AWS S3 bucket as a repo for the large data
 - Use an AWS SDK library for your programming language, e.g. SQS Extended Client Java Library
 - Producer application:
-  - 1. Large message/data gets sent to an S3 bucket
-  - 2. Write message to the SQS with a reference to the S3 bucket object
+  1. Large message/data gets sent to an S3 bucket
+  2. Write message to the SQS with a reference to the S3 bucket object
 - Consumer application:
-  - 1. Reads the message from the SQS Queue
-  - 2. Uses the data from the message to request the large data object from the S3 bucket
+  1. Reads the message from the SQS Queue
+  2. Uses the data from the message to request the large data object from the S3 bucket
 - Example: you wouldn't actually upload a video for processing to the SQS Queue, just to the bucket.
 
 ### SQS API
@@ -212,26 +214,26 @@ For sending large messages beyond 256KB.
 Must know for exam:
 
 - Queue management:
-  - CreateQueue
-    - MessageRetentionPeriod - how long message is kept in queue before being discarded
-  - DeleteQueue delete the queue and all messages in the queue
-  - PurgeQueue: delete all messages in the queue
+  - `CreateQueue`
+    - `MessageRetentionPeriod` - how long message is kept in queue before being discarded
+  - `DeleteQueue` delete the queue and all messages in the queue
+  - `PurgeQueue`: delete all messages in the queue
 - Producer:
-  - SendMessage
-    - DelaySeconds - wait before message becomes visisble
+  - `SendMessage`
+    - `DelaySeconds` - wait before message becomes visible
 - Consumer:
 
-  - ReceiveMesage
-  - DeleteMessage
-  - MaxNumberOfMessages: default 1, max 10 - for Consumer to get in one request
-  - ReceivedMessageWaitTimeSecond: for Long Polling
+  - `ReceiveMessage`
+  - `DeleteMessage`
+  - `MaxNumberOfMessages`: default 1, max 10 - for Consumer to get in one request
+  - `ReceivedMessageWaitTimeSecond`: for Long Polling
 
-- ChangeMessageVisisbility: length of time after reading message to wait before it becomes visible again for another Consumer, e.g. if consumer needs longer to process a message.
+- `ChangeMessageVisibility`: length of time after reading message to wait before it becomes visible again for another Consumer, e.g. if consumer needs longer to process a message.
 
 - Batch API calls to reduce number of requests into the API.
-  - SendMessage
-  - DeleteMessage
-  - ChangeMessageVisibility
+  - `SendMessage`
+  - `DeleteMessage`
+  - `ChangeMessageVisibility`
 
 ### SQS - FIFO Queues
 
@@ -251,21 +253,21 @@ Must know for exam:
 - It is for a set time period (5 mins)
 - Duplicate Messages with the same Deduplication ID within a set time period are removed from the queue.
 - Two methods:
-  - Content based de-duplication - sha-256 hash of messsage body is used as ID
+  - Content based de-duplication - a SHA-256 hash of the message body is used as the ID
   - Explicitly provide an ID when sending the message
 
 #### Message Grouping
 
-- **Message Group ID**
+- `MessageGroupID`
 - Mandatory parameter when sending a message
-- - If need ordering across all messags, then use the same parameter
+- - If need ordering across all messages, then use the same parameter
 - If you need ordering within specific groups, then provide unique parameter for each group of messages.
 - E.g. if you want ordering for each customer's messages, then add the customer ID as the message grouping ID.
-- For SQS FIFO, the maximum number of consumers that can simultaneously process messages from the SQS FIFO queue is **equal** to the number of message groups you defined. Each consumer can only handle messages from a single message group at a time, so with 10 message groups, you can support up to 10 consumers concurrently.
+- For SQS FIFO, the maximum number of consumers that can **simultaneously** process messages from the SQS FIFO queue is **equal** to the number of message groups you defined. Each consumer can only handle messages from a single message group at a time, so with 10 message groups, you can support up to 10 consumers concurrently.
 
 ## Simple Notification Service (SNS)
 
-To avoid an application having to send messages to many consumer by knowing about those consumers, the **publisher subscriber** pattern is used with SNS. An application publishes notifications to SNS **topic**, and other applications can subscribe to the SNS instance to pick up the messages.
+To avoid an application having to send messages to many consumers by knowing about those consumers, the **publisher subscriber** pattern is used with SNS. An application publishes notifications to an SNS **topic**, and other applications can subscribe to the SNS instance to receive the messages.
 
 - Event producer only sends one message
 - Each subscriber gets messages from the topic - SNS pushes the messages out to the subscribers, they do not pull the message.
@@ -278,9 +280,9 @@ To avoid an application having to send messages to many consumer by knowing abou
   - SMS & Mobile notifications
   - HTTP & HTTPS endpoints
   - SQS
-  - Lamdba
+  - Lambda
   - Kinesis Data Firehose
-- SNS receives data from AWS services
+- SNS receives data from AWS services:
   - CloudWatch alarms
   - CloudFormation
   - Etc
@@ -295,7 +297,7 @@ To avoid an application having to send messages to many consumer by knowing abou
   - Create a platform application
   - create a platform endpoint
   - Publish to the platform endpoint
-  - Supported by Google GCM, Apple APNS, Amazong ADM
+  - Supported by Google GCM, Apple APNS, Amazon ADM
 
 ### SNS Security
 
@@ -366,7 +368,7 @@ Example message with orderStatus:
 
 ## Kinesis Data Streams
 
-Collect and store streaming **real-time** data.
+Collect and store streaming **real-time** data. Any time real-time is mention in the exam questions, it is probably referring to Kinesis.
 
 - Click-streams initiated by a user
 - IoT Devices
@@ -398,8 +400,9 @@ Collect and store streaming **real-time** data.
   - KMS for at-rest
   - HTTPS for in-flight
 - Code Libraries:
-  - Kinesis Producer Libray (KPL) - for Producer application
+  - Kinesis Producer Library (KPL) - for Producer application
   - Kinesis Client Library (KCL) - for Consumer application
+  - These are Java libraries.
 
 ### Capacity Modes
 
@@ -417,7 +420,7 @@ Collect and store streaming **real-time** data.
   - Default capacity is 4 MB/s, or 4,000 records per second (equivalent for 4 shards)
   - 8 MB/s read/out
   - Scales automatically - using throughput metric peak within last 30 days
-    - Max scale is equivalent of 10 shards
+    - Max scale is equivalent of 10 shards when first provisioned - apparently can scale beyond this though.
   - Pay per stream per hour AND data in/out per GB
 
 ### Demo
@@ -433,18 +436,18 @@ Collect and store streaming **real-time** data.
 
   - Producers:
     - Amazon Kinesis Agent - uses a standalone Java application on application servers to send data to the stream
-    - AWS SDK - use Java to develop producers at low level
-    - Amazon Kinesis Producer Library (KPL) - to develop producers at a high level with better API
+    - AWS SDK - use Java to develop producers at low level - can use other languages, e.g. .NET, doesn't have all the functionality of KPL.
+    - Amazon Kinesis Producer Library (KPL) - to develop producers at a high level with better API (Java only).
   - Consumers:
     - Amazon Kinesis Data Analytics - process and analyse using SQL or Java
     - Amazon Kinesis Data Firehose - process and store records in a destination
-    - Amazon Kinesis Client Libray (KPL) - client library to develop consumer applications
-      - Note: When using Kinesis Client Library, each shard is to be read-only by one KCL instance (on an EC2 instance). So if you have 10 shards, the the maximum KCL instances you can have is 10 (so 10 EC2 instances).
+    - Amazon Kinesis Client Library (KPL) - client library to develop consumer applications
+      - Note: When using Kinesis Client Library, each shard is to be read-only by one KCL instance (on an EC2 instance). So if you have 10 shards, the maximum KCL instances you can have is 10 (so 10 EC2 instances).
   - Monitoring
   - Configuration - Scale
-  - Enhanced fan-out - consumers can use the enhanced fan out facility
+  - **Enhanced fan-out** - consumers can use the enhanced fan out facility. Using standard fan-out, all consumers share the 2 MB p/s output limit. Using **enhanced fan-out**, each consumer gets a dedicated 2 MB p/s out limit, so it is faster, but more expensive.
 
-- Use Terminal or CLI in AWS Console Cloudshell
+- Use Terminal or CLI in AWS Console CloudShell
 
   - `aws --version` Use version 2
   - Write to stream using `put-record`:
@@ -493,10 +496,10 @@ Collect and store streaming **real-time** data.
 
   - Other --shard-iterator-type options:
 
-    - TRIM_HORIZON: start from the oldest record
-    - LATEST: start from the newest record
-    - AT_TIMESTAMP: start from a specific timestamp
-    - AFTER_SEQUENCE_NUMBER: start after a specific record
+    - `TRIM_HORIZON`: start from the oldest record
+    - `LATEST`: start from the newest record
+    - `AT_TIMESTAMP`: start from a specific timestamp
+    - `AFTER_SEQUENCE_NUMBER`: start after a specific record
 
   - Example of data returned:
 
@@ -521,13 +524,14 @@ Collect and store streaming **real-time** data.
   }
   ```
 
-  - Can contiue to read using created shard iterator but use different shard-iterator type to get continuing data.
+  - Can continue to read using created shard iterator but use different shard-iterator type to get continuing data.
 
 ## Amazon Data Firehose
 
 A service to send data from sources into target destinations.
 
-- Various producers can push data to Firehose
+- Various producers can push data to Firehose:
+  - AWS SDK, CLI, Kinesis Agent, Kinesis Data Streams, Lambda, CloudWatch logs, 3rd party tools, IoT Devices.
 - Or some services Firehose can pull data (Kinesis Data Streams, CloudWatch, AWS IoT)
 - 1 MB per record max
 - Data accumulated into a buffer in Firehouse
@@ -538,7 +542,7 @@ A service to send data from sources into target destinations.
     - Datadog, splunk, mongoDB, new relic
   - HTTP Endpoints
     - For when a service is not supported.
-- Firehose can use Lamda functions if data transformation is needed
+- Firehose can use Lambda functions if data transformation is needed
 - Option available to write all or failed data into an S3 bucket for a backup.
 
 ### Features
@@ -548,7 +552,8 @@ A service to send data from sources into target destinations.
 - Near real-time with buffering based on size/time, there is a delay because of filling the buffer and waiting for it to be flushed.
 - Data formats: CSV, JSON, Parquet, Avro, Raw Text, Binary data
 - Convert data to Parquet/ORC, compression with gzip/snappy
-- Custom transformation: using Lambda, e.g. change from CSV to JSON, etc
+  - Parquet and ORC (Optimized Row Columnar) are columnar storage formats, can be queried on specific columns in other tools.
+- Custom transformation: using Lambda, e.g. change from CSV to JSON, etc.
 
 ### 📊 Kinesis Data Streams vs Kinesis Data Firehose
 
@@ -576,13 +581,13 @@ A service to send data from sources into target destinations.
 - Source:Data streams
 - Destination: S3
 - Browse and choose Stream (from previous demo)
-- Transform: can setup using lamda functions
+- Transform: can setup using lambda functions
 - Convert record format into Parquet or ORC
 - Destination settings:
 
   - S3 bucket - created or create one
   - Dynamic partitioning
-  - S3 bucket prefix (optional) - default is a data format - can be overriden
+  - S3 bucket prefix (optional) - default is a data format - can be overridden
   - S3 bucket error output prefix (optional) - for errors (/errors)
   - S3 buffer hints - size of buffer before flushing
     - Buffer size, default 5MiB, 1MiB to 128MiB.
@@ -609,18 +614,18 @@ A service to send data from sources into target destinations.
   - Amazon MSK (Apache Kafka)
   - **Does NOT read from Amazon Data Firehose**
 - Managed service, runs on a managed cluster; compute resource with auto-scaling, parallel computation, AWS manages backups (checkpoints/snapshots)
-- Use any Flink feature to transform data
+- Can use any Flink feature to transform data
 
 ## SQS vs SNS vs Kinesis
 
-| SQS                                             | SNS                                                  | Kinesis                                         |
-| ----------------------------------------------- | ---------------------------------------------------- | ----------------------------------------------- |
-| Consumer "pull data"                            | Push data to many subscribers                        | Standard: pull data, 2MB per shared             |
-| Can have as many workers (consumers) as we want | Up to 12,500,000 subscribers                         | Enhanced-fan out: push data 2MB per shard       |
-|                                                 | Up to 100,000 topics                                 |                                                 |
-| Data is deleted after being consumed            | Data is not persisted (lost if not delivered)        | Possibilty to replay data                       |
-|                                                 |                                                      | Data expires after X days                       |
-|                                                 | Pub/Sub                                              | Meant for real-time big data, analytics and ETL |
-| No need to provision throughput                 | No need to provision throughput                      | Provided mode or on-demand capacity mode        |
-| Ordering guarantees only on FIFO queues         | FIFO capability for SQS FIFO                         | Ordering at the shard level                     |
-| Individual message delay capability             | Integrates with SQS for fan-out architecture pattern |                                                 |
+| SQS                                             | SNS                                                  | Kinesis                                             |
+| ----------------------------------------------- | ---------------------------------------------------- | --------------------------------------------------- |
+| Consumers "pull data"                           | Push data to many subscribers                        | Standard: pull data, out: 2MB **shared**            |
+| Can have as many workers (consumers) as we want | Up to 12,500,000 subscribers                         | Enhanced-fan out: push data 2MB per shard           |
+|                                                 | Up to 100,000 topics                                 |                                                     |
+| Data is deleted after being consumed            | Data is not persisted (lost if not delivered)        | Possibility to replay data                          |
+|                                                 |                                                      | Data expires after X days                           |
+|                                                 | Pub/Sub                                              | Meant for **real-time** big data, analytics and ETL |
+| No need to provision throughput                 | No need to provision throughput                      | Provisioned mode or on-demand capacity mode         |
+| Ordering guarantees only on FIFO queues         | FIFO capability for SQS FIFO                         | Ordering at the shard level                         |
+| Individual message delay capability             | Integrates with SQS for fan-out architecture pattern |                                                     |
