@@ -11,7 +11,7 @@
 ## EBS Volume
 
 1. It's a network drive, so not attached physically to the EC2, therefore there is network latency.
-2. There is a one-to-many relationship between the EC2 and the EBS, an EBS cannot be attached to more than one EC2 at a time.
+2. There is a one-to-many relationship between the EC2 (one) and the EBS (many), an EBS cannot be attached to more than one EC2 at a time.
 3. It's locked to an availability zone, to move a volume to a different AZ, a snapshot can be taken and moved across.
 4. You pay for provisioned capacity (not used capacity).
 5. You can increase the provisioned capacity if needed.
@@ -20,10 +20,10 @@
 
 ## Delete on termination
 
-1. When creating an EBS volume during EC2 creation, there is an option to delete on termination.
-   1. Default selection (can be overridden):
-      1. The root volume is selected
-      2. Any other attached EBS volumne is **not selected** by default for deletion on termination. It will remain, unless the option is overridden.
+When creating an EBS volume during EC2 creation, there is an option to delete on termination. Default selection (can be overridden):
+
+- The root volume is selected for delete on termination
+- Any other attached EBS volume is **not selected** by default for deletion on termination. It will remain, unless the option is overridden.
 
 ### EBS Volume Types
 
@@ -40,11 +40,11 @@ Only **gp2/gp3** and **io1/io2** can be used as boot volumes.
 
 - Cost effective
 - Uses: System boot volumes, virtual desktops, dev and test environments.
-- gp3 is the newer version, can increase IOPS and throughput independantly of storage size.
-  - Max throughput p/s: 250 MiB/s
+- gp3 is the newer version, can increase IOPS and throughput independently of storage size.
+  - Max throughput p/s: 1000 MiB/s
   - Max IOPS 16,000
 - gp2 is the older version, IOPS and throughput are linked to storage size.
-  - Max throughput p/s: 1000 MiB/s
+  - Max throughput p/s: 250 MiB/s
   - Max IOPS 16,000
 - Volume size: 1GiB to 16 TiB.
 
@@ -56,8 +56,8 @@ Only **gp2/gp3** and **io1/io2** can be used as boot volumes.
 - io1
   - Volume size: 4 GiB to 16 TiB
   - Max throughput p/s: 1000 MiB/s
-  - Max PIOPS: 64,000 for Nitro EC2, 32,000 for others.
-  - Can increase IOPS independantly to storage size.
+  - Max PIOPS (Provisioned IOPS): 64,000 for Nitro EC2, 32,000 for others.
+  - Can increase IOPS independently to storage size.
 - io2 Block Express
   - Volume size: 4 GiB to 64 TiB
   - Max throughput p/s: 4000 MiB/s
@@ -72,6 +72,18 @@ Only **gp2/gp3** and **io1/io2** can be used as boot volumes.
 - Volume size: 125 GiB to 16 TiB
 - st1: throughput optimised, 500 MiB/s throughput, max IOPS 500
 - st2: 250 MiB/s throughput, max IOPS 250
+
+#### ⚙️ Amazon EBS Volume Type Comparison
+
+| Volume Type | Max Size | Max IOPS                     | Max Throughput               | Notes                                                         |
+| ----------- | -------- | ---------------------------- | ---------------------------- | ------------------------------------------------------------- |
+| **gp2**     | 16 TiB   | 16,000 (scales with size)    | 250 MiB/s (scales with size) | Baseline 3 IOPS/GB; burst to 3,000 IOPS for <1 TiB            |
+| **gp3**     | 16 TiB   | 16,000 (provisionable)       | 1,000 MiB/s (provisionable)  | Performance decoupled from size; cheaper than gp2             |
+| **io1**     | 16 TiB   | 64,000 Nitro (provisionable) | 1,000 MiB/s                  | High-performance; supports multi-attach                       |
+|             |          | 32,000 others                |                              |                                                               |
+| **io2**     | 64 TiB   | 256,000 (provisionable)      | 4,000 MiB/s                  | Higher durability (99.999%); ideal for critical workloads     |
+| **st1**     | 16 TiB   | 500 (Not guaranteed)         | 500 MiB/s (burst)            | Throughput-optimized HDD; best for large sequential workloads |
+| **sc1**     | 16 TiB   | 250 (Not guaranteed)         | 250 MiB/s (burst)            | Cold HDD; lowest cost; infrequent access                      |
 
 ### EBS Description
 
@@ -89,9 +101,9 @@ Don't need to detach the EBS to take a snapshot.
 1. For cheaper storage of the snapshot (75% cheaper) it can be moved to an archive.
 2. Restoring the snapshot from the archive takes 24 to 72 hours.
 
-### EBS Recyle Bin
+### EBS Recycle Bin
 
-1. A rule can be setup to keep deleted shapshots in a recycle bin in case of accidental deletion, etc.
+1. A rule can be setup to keep deleted snapshots in a recycle bin in case of accidental deletion, etc.
 2. The length the snapshot is retained in the recycle bin is from 1 day to 1 year.
 
 ### Fast Snapshot Restore (FSR)
@@ -139,7 +151,7 @@ echo "<h1>Hello world from $(hostname -f)</h1>" > /var/www/html/index.html
 
 ## EC2 Instance Store
 
-The Elastic Block Storeage (EBS) is a network drive, so there is network latency when accessing it. To have faster access to storage from an EC2 instance, an **EC2 Instance Store** can use the hard drive attached to the physical server.
+The Elastic Block Storage (EBS) is a network drive, so there is network latency when accessing it. To have faster access to storage from an EC2 instance, an **EC2 Instance Store** can use the hard drive attached to the physical server.
 
 ### Ephemeral storage
 
@@ -164,7 +176,7 @@ A Managed network file system.
 - 1000s of concurrent NFS clients, 10GB+ throughput
 - Can grow to petabtyes
 - Encryption at Rest (configurable)
-- You only pay for the storage you use.
+- You only pay for the storage you use (not provisioned, EFS scales automatically).
 
 ### Performance mode
 
@@ -177,17 +189,3 @@ A Managed network file system.
 - Enhanced:
   - Provisioned - reserved throughput regardless of storage size.
   - Elastic - automatically scales based on workload, for unpredictable workloads.
-
-### Storage classes
-
-Lifecyle management - files get automatically transitioned across the storage tiers based on access frequency. The number of days to move a file since last access across the tiers can be configurated.
-
-Storage tiers get cheaper for less frequent access, can achieved upto 90% saving if selecting the right class.
-
-- Storage tiers
-  - Standard: for frequently access files
-  - Infrequent Access (IA): cost to retrieve files, lower cost to store.
-  - Archive: for rarely accessed files (a few times per year).
-- Availability and durability
-  - Standard: Mutli-AZ, for Prod.
-  - One Zone: single-AZ, for dev, backups, compatible with IA.
