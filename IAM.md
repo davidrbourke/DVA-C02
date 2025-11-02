@@ -120,3 +120,17 @@ Another example would be an EC2 instance trying to access and S3 bucket. Either 
   - key rotation
   - using IAM tools to apply permissions
   - analysing access patterns and reviewing permissions.
+
+## 🔐 IAM Role vs Resource-Based Policy vs Identity-Based Policy
+
+| Aspect                       | IAM Role                                                         | Resource-Based Policy                                           | Identity-Based Policy                                               |
+| ---------------------------- | ---------------------------------------------------------------- | --------------------------------------------------------------- | ------------------------------------------------------------------- |
+| **Purpose**                  | Temporary identity with permissions, assumed by trusted entities | Grants access _to a resource_ from external identities          | Grants permissions _to an IAM identity_ (user, group, or role)      |
+| **Attached To**              | Not attached — assumed by users, services, or accounts           | AWS resources (e.g., S3 bucket, Lambda function, KMS key)       | IAM identities (users, groups, roles)                               |
+| **Principal Required?**      | Yes — in the _trust policy_ (defines who can assume the role)    | Yes — defines _who_ can access the resource                     | No — principal is implicit (the identity the policy is attached to) |
+| **Credentials Provided?**    | Yes — temporary credentials via STS when assumed                 | No — relies on the caller’s existing credentials                | Yes — IAM identity uses its own credentials                         |
+| **Use Case Examples**        | EC2 accessing S3, cross-account access, federated login          | Allow another account to access an S3 bucket or invoke a Lambda | Allow a user to list EC2 instances or access DynamoDB               |
+| **Policy Type**              | Trust policy + permission policy                                 | Resource policy only                                            | Permission policy only                                              |
+| **Cross-Account Access**     | Common — roles are ideal for delegation across accounts          | Supported — must specify external principal                     | Not directly supported — must use roles or resource policies        |
+| **Session Duration**         | Temporary (15 minutes to 12 hours)                               | Not applicable                                                  | Long-term credentials (unless using MFA or session policies)        |
+| **Inline Policies Allowed?** | Yes                                                              | No                                                              | Yes                                                                 |

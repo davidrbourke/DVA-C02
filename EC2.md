@@ -133,16 +133,33 @@ For this a role was create in IAM for EC2 called DemoRoleForEC2 and assigned to 
 - Cost: Up to 72% discount compared to On-demand
 - Details:
   - Reserve specific instance attributes; instance type, region, tenancy, OS.
+    - Flexibility: Limited — only AZ, scope, networking type, and instance size (within same family)
   - Scope is Region or Availability Zone (AZ).
   - Buy or sell in the Reserved Instance Marketplace
 - Reservation period: 1 or 3 years (longer is greater discount)
 - Payment: No upfront, partial upfront, all upfront (more upfront is larger discount)
 
-#### Convertable Reserved Instances
+#### Convertible Reserved Instances
 
 Allows changing the instance specification; instance type, family, OS, scope, and tenancy.
 
 - Cost: Up to 66% discount
+
+## 🔄 AWS Reserved Instance vs Convertible Reserved Instance: Changeability Comparison
+
+| **Attribute**                                         | **Standard Reserved Instance**     | **Convertible Reserved Instance**           |
+| ----------------------------------------------------- | ---------------------------------- | ------------------------------------------- |
+| **Instance Type (e.g., m5.large)**                    | ✅ Changeable (within same family) | ✅ Changeable (any type, any family)        |
+| **Instance Family (e.g., m5 → c6i)**                  | ❌ Not changeable                  | ✅ Changeable                               |
+| **Operating System (Linux, Windows)**                 | ❌ Not changeable                  | ✅ Changeable                               |
+| **Tenancy (Shared, Dedicated, Host)**                 | ❌ Not changeable                  | ✅ Changeable                               |
+| **Platform (e.g., EC2, RDS)**                         | ❌ Not changeable                  | ✅ Changeable                               |
+| **Scope (Regional vs Zonal)**                         | ✅ Changeable                      | ✅ Changeable                               |
+| **Availability Zone (if zonal)**                      | ✅ Changeable                      | ✅ Changeable                               |
+| **Network Type (VPC vs EC2-Classic)**                 | ✅ Changeable                      | ✅ Changeable                               |
+| **Exchange for other RI types**                       | ❌ Not allowed                     | ✅ Allowed (must be equal or greater value) |
+| **Term Length (1-year vs 3-year)**                    | ❌ Not changeable                  | ❌ Not changeable                           |
+| **Payment Option (All Upfront, Partial, No Upfront)** | ❌ Not changeable                  | ❌ Not changeable                           |
 
 ### Savings Plans (1 & 3 years)
 
@@ -152,7 +169,12 @@ Allows changing the instance specification; instance type, family, OS, scope, an
 - Details:
   - Fixed to a specific instance family and AWS region, e.g. M5 us-east.
   - Flexible configuration on instance size, OS, tenancy (host, dedicated, default).
-- Reservation period: 1 or 3 years, but **commiting to a certain type of usage, e.g. cost per hour**.
+- Reservation period: 1 or 3 years, but **committing to a certain type of usage, e.g. cost per hour**.
+  - **Example:** You commit to $0.10 of spend per hour. You will always pay that regardless if you are using instances.
+  - You run a t3.micro which is $0.008 per hour, you will still pay $0.10 per hour
+  - You upgrade to a larger instance that costs $0.68 per hour, because of the commitment in the Savings Plan, AWS apply a discount, e.g. $0.50 per hour.
+  - You pay $0.10/hour (already committed spend) + $0.40/hour.
+  - The amount of discount offered varies based on the instance type/family/size.
 
 ### Spot Instances
 
@@ -168,7 +190,7 @@ Allows changing the instance specification; instance type, family, OS, scope, an
   - When you have your own licenses per-socket/core/vm.
   - Where regulatory compliancy requires a dedicated server.
 - Details:
-  - Allows you to control instance placement
+  - Allows you to control instance placement, you can assign the new instances to the specific host/server.
 - Cost: Most expensive
 - Reservation period:
   - On-Demand - pay per-second
@@ -179,7 +201,7 @@ Allows changing the instance specification; instance type, family, OS, scope, an
 - Purpose: Instances run on hardware dedicated to you
 - Details:
   - May share hardware with other instances in same account
-  - No control over instance placement (can move after stopping and starting)
+  - No control over instance placement (can move after stopping and starting), the new instance could start up on a new host/server, but that server is still dedicated to just your account.
 - Reservation period:
   - On-Demand - pay per-second
   - Spot instances - pay per-hour - same pricing as standard spot instances.
@@ -196,6 +218,7 @@ Think of Dedicated Hosts as having an entire dedicated parking garage. You have 
 - Details:
   - Reserve capacity in a specific AZ for any duration.
   - You have access to it whenever you need it.
+  - You might do this over On-Demand because you want to guarantee that capacity is available whenever you need it, which may not be the case with On-Demand.
 - Reservation period: None - you can cancel at any time
 - Cost: No discounts, charged at On-Demand pricing whether you are using the instance or not.
   - Combine with Regional Reserved Instances and Savings Plans to benefit from discounts.
@@ -203,7 +226,7 @@ Think of Dedicated Hosts as having an entire dedicated parking garage. You have 
 ## Analogy of Hotels reservation
 
 1. On-Demand: staying at hotel whenever required with no pre-planning and paying full price.
-2. Reserved: planning ahead and staying for a long time, getting a discount for longer term fixed period pre-arranged booking (in a specific room type - unless using Convertable reserved).
+2. Reserved: planning ahead and staying for a long time, getting a discount for longer term fixed period pre-arranged booking (in a specific room type - unless using Convertible reserved).
 3. Savings Plan: paying a certain amount per hour for a certain period and stay in any room type.
 4. Spot instances: biding on empty rooms, highest bidder gets the room, can get ejected at any time if someone else will pay more.
 5. Dedicated hosts: booking the entire hotel and having full access to the hotel.
