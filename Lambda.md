@@ -320,3 +320,93 @@ Some patterns:
   - The event data passed to the Lambda includes data about the object, e.g. name, etc. You can use the data to call the S3 bucket to get the object and do something with it.
 
 ## Lambda - Event Source Mapping
+
+- Used when records need to be **polled** from the source
+- Lambda invoked **synchronously**
+- Uses with services:
+  - Kinesis Data Stream
+    - Example:
+      - Event Source Mapping polling setup internally
+      - Polls Kinesis for data
+      - When returns a data batch, Lambda is triggered synchronously with an event batch
+  - SQS and SQS FIFO Queues
+  - DynamoDB Streams
+- Two ways to use Event Source mapping; **Streams** and **Queues**
+- **Streams**
+  - Used with Kinesis & DynamoDB
+  - Event source mapping creates an iterator for each shard, processes items in order
+  - Iterator starts from beginning or a timestamp
+  - Processed items are not removed from the Stream, other consumers can read them
+  - Uses:
+    - Low traffic: wait for records to build up and batch process them
+    - High traffic
+      - Process multiple batches in parallel:
+        - Parallelisation: Up to 10 batches per shard processed simultaneously
+        - Normal: 1 Lambda invocation per shard
+      - In-order processing is guaranteed for each partition key
+  - Errors
+    - An error in a batch, entire batch is reprocessed until success or batch items expire, can become blocking.
+    - You can pause processing for the shared on error, by configuring Event source mapping to:
+      - discard old events - events can go to another destination
+      - restrict the number of retries
+      - split the batch on error (e.g. Lambda is timing out processing entire batch)
+- **Queues**
+  - SQS and SQS FIFO
+    - Queue is pulled by Event source mapping
+    - When there is data, Lambda is invoked with the batch of data
+  - Long Polling is used
+  - Configure batch size (1-10 messages)
+  - Set the queue visibility timeout to 6x the Lambda function timeout (recommended)
+  - You cannot use the DLQ in Lambda for failures, because that is for Asynchronous Lambdas, and Event source mapping Lambdas are Synchronous.
+    - So you can setup the DLQ in SQS
+  - Failures to go to another destination
+  - Lambda supports FIFO processing for FIFO queues
+    - SQS FIFO Scaling
+      - Messages with the same GroupID will be processed in order, so no parallel execution for messages sharing the same GroupID.
+      - Lambda function scales to the number of active message groups - still a max overall of 1000 concurrent processing (e.g. 1000 Message GroupIDs)
+  - Standard queue items are not processed in order
+  - Lambda scales to process messages as fast as possible in a **standard** queue
+    - **Lambda adds 60 more instances per minute to scale up**
+    - Max: up to 1000 batches of messages processed simultaneously
+  - Error in a batch, entire batch is returned to the Queue
+    - Messages may be processed again in a different batch
+  - Use Idempotent processing for the Lambda as the same message may be pulled from the queue twice
+  - Lambda deletes items from the queue after they're processed successfully
+
+### Demo - Event source mapping - using SQS Queue
+
+- Create Lambda
+- Author from Scratch
+- Create an SQS Queue separately - type Standard
+- Configure Lambda
+  - Add trigger
+    - SQS - choose the created Queue
+    - Configure Batch size: 1 to ?
+    - Batch window - amount of time in seconds to gather messages be invoking function
+    - Enable trigger
+  - Need to configure IAM Role so Lambda has permission to read form the SQS by attaching `AWSLambdaSQSQueueExecutionRole` permission to the IAM Policy for the Lambda.
+  - Update the code in the function - print event and return "success"
+- To Test
+  - Send a message to SQS via the SQS test send message console page
+  - Lambda is continuously polling the SQS, so should pick up the message
+  - CloudWatch log events will show the data returned and the invocation working
+  - Message in Queue will be removed as now processed by the Lambda function
+- **Disable the trigger** in the Console - to prevent cost and polling
+
+- Kinesis - if using Kinesis you would chose the trigger as Kinesis
+  - Select the Data stream
+  - Consumer - if using a fan out consumer mode in kinesis you can choose the consumer to listen for updates on.
+  - Batch size: 100 default, number of records to read at once
+  - Batch window: wait time to build bigger batch (5 mins max)
+  - Starting position - where to start reading the data stream from:
+    - Latest
+    - Trim horizon
+    - At timestamp
+  - On-failure destination - destination to send discard records that could not be read
+  - Retry attempts: -1 default, times to retry the function on error.
+  - Max age of record: -1 default no limit, Max up to 7 days, max age of record Lambda sends to a function for processing
+  - Split batch on error (checkbox) - if function returns an error, split the batch into two and retry.
+  - Concurrent batches per shard: default 1 - process batches from the same shard concurrently.
+  - Tumbling window duration: 0-900 (15 mins max), time window for an aggregation
+  - Report batch item failures (checkbox) - allow function to return a partial successful response for a batch of records.
+  - Enable trigger option
