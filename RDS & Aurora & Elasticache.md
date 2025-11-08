@@ -2,12 +2,12 @@
 
 - A Managed database service for relational databases that SQL
 - Engines:
-  - Aurora (AWS Propietary Database)
+  - Aurora (AWS Proprietary Database)
   - IBM DB2
   - Oracle
   - MySQL
   - MariaDB
-  - Postgress
+  - Postgres
   - SQL Server (Microsoft)
 
 ## Managed Service
@@ -54,14 +54,14 @@ If you have an application with a high number of reads, a single RDS instance ma
 
   - E.g., us-east-1a to us-west-1b
 
-### RDS Mutli AZ
+### RDS Multi AZ
 
 This is **NOT** the same as Read Replicas, it is for Disaster Recovery.
 
 - Replication is **synchronous**, so writes only complete when written to all replicas.
 - Application communicates to RDS with a single DNS name
 - If the RDS fails, there is automatic failover to the replica, you don't need to do anything during the failure.
-- Optional: read replicas can also be setup to be mutli-AZ.
+- Optional: read replicas can also be setup to be multi-AZ.
 
 #### Converting Single-AZ to Multi-AZ
 
@@ -72,14 +72,14 @@ This is **NOT** the same as Read Replicas, it is for Disaster Recovery.
 
 ## Aurora DB
 
-A properietary database from AWS.
+A proprietary database from AWS.
 
 - Postgres and MySQL are both supported as Aurora Databases. The drivers work as if Aurora was either of those DBs. When you create the DB, you have to chose either the Postgres Aurora version or MySQL Aurora version.
 - Aurora is cloud optimized, 5x performance of MySQL, 3x over Postgres.
 - Storage automatically grows
   - Starts at 10GB
   - Grows automatically up to 128TB in increments of 10GB
-- Faster replication to read-replicas that MySQL (sub 10ms replica lag)
+- Faster replication to read-replicas than MySQL (sub 10ms replica lag)
 - Automatic failover is instantaneous.
 - Costs 20% more than RDS
 - Managed service; automatic backup and recovery, isolation & security, industry compliance, routine maintenance, auto-patching.
@@ -88,7 +88,7 @@ A properietary database from AWS.
 ### High availability
 
 - Creates 6 copies of data across 3 AZ (2 in each AZ). To allow for failures:
-  - Requires 4 copies out of 6 for writes to be completed to return a succesful write - for performance.
+  - Requires 4 copies out of 6 for writes to be completed to return a successful write - for performance.
   - Requires 3 copies of out 6 for reads - it might not be the latest copy you get, but 3 of the 6 replicas must be available/healthy for a read, you only get the data from 1 replica.
   - This Multi-AZ setup can be configured, e.g. no. of copies, same or cross region, etc.
 - Self healing - can correct corrupt data with synchronisation
@@ -119,16 +119,16 @@ A properietary database from AWS.
 The RDS Proxy sits in front of the RDS database, instead of your application connecting directly the database via the connection string, it can connect to the RDS Proxy.
 
 - RDS Proxy is a managed proxy for RDS
-- Allows DB connections to be pooled at the proxy level instead of the database, so connections can be pooled and shared across mutliple applications. Useful also when using AWS Lamdas that can increase connections drastically temporarily.
-- Reduces load on the database, as fewer overall connections may be needed, and minimizes how the long the connections may be open for.
+- Allows DB connections to be pooled at the proxy level instead of the database, so connections can be pooled and shared across multiple applications. Useful also when using AWS Lambdas that can temporarily increase connections drastically.
+- Reduces load on the database, as fewer overall connections may be needed, and minimizes how long the connections may be open for.
 - RDS Proxy is Serverless, autoscaling and Multi-AZ
 - Reduces RDS & Aurora failover time by up to 66%
 - Supports RDS: MySQL, Postgres, MariaDB, SQL Server, Aurora. Oracle is not supported.
 - Application just needs a different connection string to the proxy instead of the database.
-- Can be used to enfoece IAM Authentication for DB connection, and stores credentials in AWS Secrets Manager.
+- Can be used to enforce IAM Authentication for DB connection, and stores credentials in AWS Secrets Manager.
   - For non-RDS Proxy IAM Authentication, an IAM User or Role must be given permission to connect to the database. Using AWS CLI or SDK, a token is requested for the User/Role, and the token is used as the password to connect to the database.
   - For RDS Proxy IAM Authentication, IAM Authenticates the client (App or user), then RDS proxy authenticates to the DB, with a password/credentials stored in Secrets Manager.
-- RDS Proxy is not publically accessible from the internet, it must be accessed from a VPC.
+- RDS Proxy is not publicly accessible from the internet, it must be accessed from a VPC.
 
 ## ElastiCache
 
@@ -140,7 +140,7 @@ Elasticache is managed cache (Redis or Memcached), in-memory databases for high-
 ### ElastiCache Solution Architectures
 
 - DB cache
-  1. Application attempts to read data from the cache, a cache-hit will reutrn the data.
+  1. Application attempts to read data from the cache, a cache-hit will return the data.
   2. A cache-miss, will load the data from the database back to the application.
   3. The application will write the data to the cache for future requests to use.
   4. An invalidation strategy is required, to keep data roughly in sync with the DB.
@@ -185,7 +185,7 @@ Elasticache is managed cache (Redis or Memcached), in-memory databases for high-
 - Cluster location
   - AWS
   - On-prem
-- Mutli-AZ
+- Multi-AZ
   - Enabled or Disabled
 - Auto-failover (yes/no)
 - Cluster settings
@@ -217,7 +217,7 @@ https://aws.amazon.com/caching/best-practices/
 - Only cache the data if it is effective for that data
   - E.g. data that doesn't change that frequently
 - Is it safe? E.g. can it be eventually consistent
-- It is structured well for caching, e.g. key-valur pair
+- It is structured well for caching, e.g. key-value pair
 
 #### Caching design patterns
 

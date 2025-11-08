@@ -145,7 +145,7 @@ systemctl enable httpd
 ```
 #!/bin/bash
 # Customise index.html
-ble httpd
+systemctl enable httpd
 echo "<h1>Hello world from $(hostname -f)</h1>" > /var/www/html/index.html
 ```
 
