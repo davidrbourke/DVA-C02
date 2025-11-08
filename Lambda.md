@@ -163,8 +163,8 @@ Expose the Lambda to the internet for HTTP invocation
 
 #### ALB Multi-Value Headers
 
-- Allows the querystring parameters in HTTP request to be repeated, instead of keep just one, all can be kept, e.g.
-- `http://example.com/path?name=foo&name-bar` converts to JSON array:
+- Allows the querystring parameters in HTTP request to be repeated, instead of keeping just one, all can be kept, e.g.
+- `http://example.com/path?name=foo&name=bar` converts to JSON array:
 - `"queryStringParameters":{"name":["foo", "bar"]}`
 - If ALB Multi-Value headers are not enabled in the ALB, then just one of the parameters with the repeated name will be chosen.
 - Can enable this at the Target Group level.
@@ -268,7 +268,7 @@ To prevent endless retry on Asynchronous lambda errors, setup a DLQ:
 
 Two ways:
 
-- CRON or Rate EventBridge Rule to trigger on scheduled to invoke Lambda
+- CRON or Rate EventBridge Rule to trigger on schedule to invoke Lambda
 - CodePipeline EventBridge Rule to trigger on state changes to invoke Lambda
 
 ### Demo 3
@@ -281,7 +281,7 @@ Two ways:
   - Rule type
     - Rule with event pattern
     - Schedule (\*)
-  - Define Scheduled pattern, e.g Cron or regular
+  - Define Scheduled pattern, e.g. Cron or regular
   - Choose target: Lambda
     - Choose the specific Lambda
 - In Lambda Permissions
@@ -290,7 +290,7 @@ Two ways:
 
 ## Lambda & S3 Event Notifications
 
-Get notified whenever a object is created/deleted, etc, in the S3 Bucket.
+Get notified whenever an object is created/deleted, etc, in the S3 Bucket.
 Some patterns:
 
 - S3 -> Lambda -> DLQ -> SQS (S3 straight to Lambda)
@@ -317,6 +317,6 @@ Some patterns:
       - SQS queue
 - Lambda resource policy will have been updated to allow S3 bucket to invoke the function
 - In the CloudWatch logs, you can view the invocation of the Lambda by the S3 object event
-  - The event data passed to the Lambda include data about the object, e.g. name, etc. You can use the data to call the S3 bucket to get the object and do something with it.
+  - The event data passed to the Lambda includes data about the object, e.g. name, etc. You can use the data to call the S3 bucket to get the object and do something with it.
 
 ## Lambda - Event Source Mapping
