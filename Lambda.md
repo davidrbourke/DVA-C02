@@ -321,6 +321,8 @@ Some patterns:
 
 ## Lambda - Event Source Mapping
 
+Some sources cannot invoke the Lambda directly, so Event Source Mapping is used. This is when the Event Source Mapping is setup to poll the source for items, and trigger the Lambda. Example would be using SQS, SQS cannot trigger the Lambda, so Event Source Mapping polls the SQS Queue for messages, on finding messages, it triggers the Lambda, passing the messages into the Lambda.
+
 - Used when records need to be **polled** from the source
 - Lambda invoked **synchronously**
 - Uses with services:
@@ -410,3 +412,260 @@ Some patterns:
   - Tumbling window duration: 0-900 (15 mins max), time window for an aggregation
   - Report batch item failures (checkbox) - allow function to return a partial successful response for a batch of records.
   - Enable trigger option
+
+## Event and Context Objects
+
+These are the two types of data send to the Lambda.
+
+- Event
+  - JSON document contains data the function is going to process
+  - E.g. invoking service, SQS, EventBridge, etc
+  - Event is converted into an Object in your chosen language
+- Context
+
+  - Data and methods that provide information about the Lambda itself, and runtime environment.
+  - E.g. aws_request_id, function_name, memory_limit_in_mb
+
+```
+import json
+
+def lambda_handler(event, context): # Log context information
+print(f"Function name: {context.function_name}")
+print(f"Memory limit (MB): {context.memory_limit_in_mb}")
+print(f"AWS request ID: {context.aws_request_id}")
+print(f"Log stream name: {context.log_stream_name}")
+
+    # Process each record in the event (SQS messages come in batches)
+    for record in event['Records']:
+        print("Message ID:", record['messageId'])
+        print("Message Body:", record['body'])
+
+        # You can parse the message body if it's JSON
+        try:
+            body = json.loads(record['body'])
+            print("Parsed Body:", body)
+        except json.JSONDecodeError:
+            print("Message body is not valid JSON")
+
+    return {
+        'statusCode': 200,
+        'body': json.dumps('Messages processed successfully')
+    }
+
+```
+
+## Lambda Destinations
+
+For failed result of an Asynchronous invocation or Event mapper Lambda, the event data can be sent to a destination (also can setup for successful Lambda).
+
+- Asynchronous destinations:
+  - SQS
+  - SNS
+  - Another Lambda
+  - EventBridge Bus
+- Event source mapping destinations:
+  - SQS
+  - SNS
+- Failed events will be sent to the destination **after** the Lambda retry attempts have all failed.
+
+For SQS source, favour Destinations over DLQ, as more target destinations.
+
+### Demo - Destinations
+
+- On Lambda, Add Destination configuration
+- Source
+  - Asynchronous invocation (use pre-created S3 bucket)
+  - Stream invocation (e.g. Kinesis)
+- Condition
+  - On failure
+  - On success
+- Destination type, e.g. SQS
+- Destination - choose pre-created SQS
+- IAM Role of Lambda gets Permission added to policy called `AWSLambdaSQSQueueDestinationExecutionRole`
+- Can add multiple destinations to handle success and failure as well.
+
+## Lambda Permissions
+
+When Lambda is executing (read/update/uploading) on other services, it needs an IAM Role with permission to those services, here are some sample policies:
+
+- `AWSLambdaBasicExecutionRole` - upload logs to CloudWatch
+- `AWSLambdaKinesisExecutionRole` - read from Kinesis
+- etc, other for various services
+
+- When using Event Source Mapping, Lambda uses the execution role to read event data.
+- Best practice: 1 Lambda Execution per function
+- When the Lambda function is invoked by other services, those services need permission to the Lambda.
+  - IAM Principal can access Lambda:
+    - if the IAM Policy attached to the Principal authorises it (e.g. User access)
+    - or if the resource-based policy authorises it (e.g. service access)
+
+Example of resource policy on the Lambda to allow an S3 bucket events to invoke the function:
+
+```
+{
+  "Version": "2012-10-17",
+  "Statement": [
+    {
+      "Sid": "AllowS3InvokeLambda",
+      "Effect": "Allow",
+      "Principal": {
+        "Service": "s3.amazonaws.com"
+      },
+      "Action": "lambda:InvokeFunction",
+      "Resource": "arn:aws:lambda:us-east-1:123456789012:function:MyLambdaFunction",
+      "Condition": {
+        "ArnLike": {
+          "AWS:SourceArn": "arn:aws:s3:::my-source-bucket"
+        }
+      }
+    }
+  ]
+}
+```
+
+Example of a policy for Lambda to access Kinesis data stream - after invocation from Event source mapping:
+
+```
+{
+  "Version": "2012-10-17",
+  "Statement": [
+    {
+      "Effect": "Allow",
+      "Action": [
+        "kinesis:GetRecords",
+        "kinesis:GetShardIterator",
+        "kinesis:DescribeStream",
+        "kinesis:ListStreams"
+      ],
+      "Resource": "arn:aws:kinesis:us-east-1:123456789012:stream/my-kinesis-stream"
+    }
+  ]
+}
+```
+
+## Lambda Environment Variables
+
+- Key value pair (string)
+- Lambda service adds it own variables
+- Can add your own
+- Can add them in KMS to encrypt them
+  - Encrypt with own key or Lambda service key
+
+Example of using a environment variable, you can add the key-value pair in the Environment variables Console for the Lambda (if not encrypting).
+
+```
+import os
+
+def lambda_handler(event, context):
+    # Retrieve the environment variable
+    my_env_var = os.environ.get('MY_ENV_VAR', 'default_value')
+
+    print(f"Environment variable MY_ENV_VAR is: {my_env_var}")
+
+    return {
+        'statusCode': 200,
+        'body': f"Env var value: {my_env_var}"
+    }
+```
+
+## Lambda Logging and Monitoring
+
+- CloudWatch Logs - as seen - shows data of each event triggering the Lambda, and errors, outputs, console logs.
+- CloudWatch Metrics, e.g. invocations, duration, error count, error/success rate, throttles( going over limits), async deliver failures, concurrent executions.
+- X-Ray tracing: Enable it as Configuration - Monitoring tools - AWS X-Ray: Active tracing, in the Lambda
+  - AWS runs the X-Ray Daemon for you
+  - You code must using the AWS X-Ray SDK
+  - Must have correct policy to write to X-Ray `AWSXRayDaemonWriteAccess`
+  - Environment variables to communicate with X-Ray (can be in exam):
+    - `_X_AMZN_TRACE_ID` - contains the tracing header
+    - `AWS_XRAY_CONTEXT_MISSING` - by default, LOG_ERROR
+    - `AWS_XRAY_DAEMON_ADDRESS` - the X-Ray Daemon IP_ADDRESS:PORT
+
+## Customisation at the Edge
+
+- Edge Functions:
+  - Cloud that runs at the CloudFront Edge distributions
+  - Runs close to users to minimize latency
+  - Runs before request is passed onwards to destination
+- Two types:
+  - **CloudFront Functions**
+    - Lightweight function in Javascript
+    - High scale latency sensitive customizations, change response or request between CloudFront and the Origin.
+    - High performance: Sub millisecond startup, millions of requests per second
+    - Native to CloudFront, code managed in CloudFront
+    - Max execution time: < 1ms
+    - Max memory: 2MB
+    - No network/file system access
+    - Max package size: 10KB
+    - No Access to request body
+    - Uses:
+      - Cache key transformations, e.g. transform URL, query string, etc.
+      - Header manipulation
+      - URL redirect/rewrites
+      - Auth, create/invalidate JWT, allow/deny
+  - **Lambda@Edge**
+    - Function in Node.js or Python
+    - 1000s of request per second
+    - Can change request or response between CloudFront and the Origin
+    - **Note: can also change request or response between the Viewer and CloudFront**
+    - Author function in one region, and CloudFront replicates it in all locations required
+    - Max execution time: 5-10 seconds
+    - Max memory: 128MB to 10GB
+    - Has network/file system access
+    - Max package size: 1MB to 50MB
+    - Has Access to request body
+    - Uses:
+      - Adjustable CPU/Memory
+      - When you need network/file access
+      - When you have longer processing
+      - When you need to access the request body
+- Uses, some examples:
+  - Customise CDN content
+  - Website security and privacy
+  - SEO
+  - Bot mitigation at the edge
+  - Real-time image transformation
+  - User authentication and authorisation
+- Pay only for what you use
+- Serverless
+
+## Lambda in VPC
+
+Lambda is deployed in an AWS managed VPC.
+
+- It can access other AWS Services that can be accessed publicly, e.g. Dynamo DB
+- It can access the internet
+- It **cannot** by default, access your own VPC and service deployed in it, e.g. Private RDS
+  - Solution: deploy Lambda in your Private VPC
+
+### Deploy Lambda in your VPC
+
+- You need to provide the Lambda VPC ID, Subnets and Security Groups
+- Lambda will create an ENI in your subnets
+  - For this, Lambda needs `AWSLambdaVPCAccessExecutionRole`
+- **IMPORTANT**:
+  - Lambda function in your VPC does not have access to the internet
+  - Deploying a Lambda function in a public subnet does not give it internet access or a public IP
+- To access the internet from your VPC:
+  - Deploy Lambda in private subnet with Private RDS
+  - Create a Public subnet
+    - Create NAT Gateway/Instance in the Public subnet
+    - Create Internet Gateway in Public subnet
+    - Allow NAT access to private subnet via Security Group in the private subnet
+  - IGW | Public Subnet: NAT | -> | Private Subnet: Security Group, Private RDS |
+  - To access DynamoDB outside of the VPC
+    - IGW can access DynamoDB via the internet
+    - Or add a VPC Endpoint to private access AWS Services
+
+### Demo
+
+1. Create Lambda function
+2. In default VPC create a security group
+3. In Lambda function, VPC menu option - Choose VPC - choose default VPC
+   - Choose VPC Subnets (all AZs)
+   - Security groups - choose the created SG (step 2)
+     - Saving will Fail, cannot create NAT in VPC
+     - Provide Lambda function with permission to access the VPC, attach Policy to role: `AWSLambdaENIManagementAccess`
+     - Save - will save
+4. Test
+5. Look in EC2 VPC, you will see new Network Interfaces for each Subnet
