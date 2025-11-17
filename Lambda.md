@@ -669,3 +669,305 @@ Lambda is deployed in an AWS managed VPC.
      - Save - will save
 4. Test
 5. Look in EC2 VPC, you will see new Network Interfaces for each Subnet
+
+## Lambda Performance and Configuration
+
+- RAM
+  - 128MB to 10GB, scales in 1MB increments
+  - More RAM => more vCPU credits
+  - Cannot set vCPU directly, must increase RAM to get more vCPU.
+  - 1792 MB == 1 vCPU
+  - > 1792 MB can make use of multithreading (parallelism)
+- Timeout
+  - Default: 3 seconds
+  - Max: 900 seconds (15 minutes)
+
+## Execution Context
+Temporary runtime environment
+- E.g. setup DB Connections, HTTP Client, etc, long running tasks.
+- Next invocation can reuse a context as it hang around between executions, AWS don't guarantee how long, mins to hours.
+- Includes a /tmp directory, 10GB of disk.
+
+### Pattern
+- Initialise DB function outside of the Lambda function handler code.
+- Use /tmp directory to share files for reuse - /tmp is ephemeral.
+- To encrypt /tmp, use KMS Data Keys, and handle encrypting/decrypting in Lambda function code, there is nothing built-in to Lambda for this.
+
+```
+import psycopg2
+import os
+
+# Global variable: persists across warm invocations
+conn = None
+
+def lambda_handler(event, context):
+    global conn
+
+    if conn is None:
+        # Cold start: create DB connection
+        print("Creating new DB connection...")
+        conn = psycopg2.connect(
+            host=os.environ['DB_HOST'],
+            database=os.environ['DB_NAME'],
+            user=os.environ['DB_USER'],
+            password=os.environ['DB_PASSWORD']
+        )
+    else:
+        # Warm start: reuse existing connection
+        print("Reusing existing DB connection...")
+
+    # Use the connection
+    with conn.cursor() as cur:
+        cur.execute("SELECT NOW();")
+        result = cur.fetchone()
+
+    return {
+        'statusCode': 200,
+        'body': f"Current time from DB: {result[0]}"
+    }
+```
+
+
+Use - for reuse between executions:
+- /tmp for any large files
+- context for long running processes, e.g. creating DB connection
+
+## Lambda Layers
+- Custom runtimes: You can use Layers to run code in languages not natively supported by Lambda, like C++ or Rust.
+- Dependencies: Layers let you package external libraries separately from your function code. This avoids repackaging unchanged dependencies with every deployment.
+Note: Layers simplify deployment and reuse, but they don’t improve execution speed or reduce cold start time.
+
+### Demo
+- In Lambda console, Layers menu, choose a layer:
+- AWS Layers - adds a library prepared by AWS already, e.g. Python Panda used in the demo.
+- Custom Layers
+- Specify ARN
+
+## Lambda File System Mounting
+- Can mount an EFS if in the same VPC as the Lambda
+- Note: each Lambda creates a new connection to the Lambda so be aware of potentially hitting total connection limits on the EFS, or burst limits if lots of Lambdas spin up quickly.
+
+## Storage Options
+## AWS Lambda Storage Options Comparison
+
+| Storage Type   | Max Size         | Persistence     | Access Speed     | Cost             | Use Case Examples                                      | Notes                                                                 |
+|----------------|------------------|------------------|------------------|------------------|--------------------------------------------------------|-----------------------------------------------------------------------|
+| `/tmp`         | 10 GB (default)  | Ephemeral        | Very fast (local)| Included         | Temporary file storage, caching, intermediate results  | Can request >10 GB via AWS support; cleared after each container ends |
+| Lambda Layers  | 250 MB per layer (max 5 layers) | Durable (read-only) | Fast (mounted)   | Included         | Shared libraries, custom runtimes, static assets       | Mounted at `/opt`; total combined size limit: 1.25 GB                 |
+| Amazon S3      | Virtually unlimited | Durable         | Fast (network)   | Additional cost  | Large file storage, input/output data, backups         | Requires SDK/API access; eventual consistency                         |
+| Amazon EFS     | Up to petabytes  | Durable          | Very fast (network file system) | Additional cost  | Shared file systems, ML models, persistent state       | Mounted at `/mnt/efs`; supports concurrent access across functions    |
+
+## Lambda Concurrency and Throttling
+- Max 1,000 concurrent functions - can request more from AWS with support ticket
+- Reserved concurrency: limit of concurrent invocations
+  - Triggers a Throttling error when the limit is reached
+  - Synchronous function errors
+  - Async function - retries after 1 sec, with exponential backup, up to max of 5 mins between retries.
+- 1,000 limit applies to ALL functions in the account, so another function reaching the limit will impact other functions trying to run.
+- A limit can be configured on the function itself.
+
+## Cold starts
+New instance of a function takes time to start up, e.g. seconds.
+
+## Provisioned Concurrency
+- Concurrency is allocated before function is invoked, so a cold start does not happen.
+- Application auto-scaling can manage concurrency (scheduled or target utilisation).
+
+### Demo Config
+- Qualifier Types: Alias or Version
+- Provisioned Concurrency: this is the number of concurrency functions to have ready.
+
+## Reserved vs Provisioned Concurrency
+
+## Reserved vs Provisioned Concurrency in AWS Lambda
+
+| Feature                  | Reserved Concurrency                        | Provisioned Concurrency                     |
+|--------------------------|---------------------------------------------|---------------------------------------------|
+| Purpose                  | Limit and guarantee max concurrent executions | Pre-warm environments to avoid cold starts |
+| Cold Start Prevention    | ❌ No                                        | ✅ Yes                                      |
+| Guarantees Capacity      | ✅ Yes                                       | ✅ Yes                                      |
+| Acts as Throttle         | ✅ Yes                                       | ❌ No                                       |
+| Cost                     | No additional cost                          | Additional charges apply                    |
+| Use Case                 | Control concurrency, protect downstream services | Low-latency, predictable workloads       |
+
+## Lambda Function Dependencies
+- Dependencies need to be packaged and zipped and uploaded to the Lambda
+- Example: Node.js node_modules is required to be uploaded
+- <= 50MB goes to Lambda
+- > 50MB goes to S3 bucket
+- Native libraries (e.g. C, C++ Binaries) work, they need to be compiled on Amazon Linux
+- AWS SDK already included in Lambda functions
+
+## Lambda and CloudFormation
+
+### Inline
+For simple use cases without dependencies
+```
+AWSTemplateFormatVersion: '2010-09-09'
+Description: Simple Lambda Function with Inline Code
+
+Resources:
+  MyLambdaFunction:
+    Type: AWS::Lambda::Function
+    Properties:
+      FunctionName: SimpleInlineLambda
+      Runtime: python3.12
+      Handler: index.lambda_handler
+      Role: arn:aws:iam::123456789012:role/lambda-execution-role  # Replace with your IAM role ARN
+      Code:
+        ZipFile: |
+          def lambda_handler(event, context):
+              return {
+                  'statusCode': 200,
+                  'body': 'Hello from Lambda!'
+              }
+      MemorySize: 128
+      Timeout: 3
+```
+
+### CF in S3
+- Upload the zip to S3 (enable versioning in S3)
+- In CF template reference the S3 bucket
+
+```
+AWSTemplateFormatVersion: '2010-09-09'
+Description: Lambda Function using S3 with Object Version
+
+Resources:
+  MyLambdaFunction:
+    Type: AWS::Lambda::Function
+    Properties:
+      FunctionName: S3VersionedLambda
+      Runtime: python3.12
+      Handler: index.lambda_handler
+      Role: arn:aws:iam::123456789012:role/lambda-execution-role  # Replace with your IAM role ARN
+      Code:
+        S3Bucket: my-lambda-code-bucket                         # Replace with your bucket name
+        S3Key: lambda-code/my-function.zip                      # Replace with your object key
+        S3ObjectVersion: 3H4k9xZlT8a1b2c3d4e5f6g7h8i9j0k1        # Replace with your actual object version
+      MemorySize: 128
+      Timeout: 3
+```
+
+## Lambda Container Images
+- Deploy image up to 10GB for ECR
+- The Base image must implement the **Lambda Runtime API**
+  - Base images exist already for multiple languages
+  - Can implement your own image
+- Test the container locally using the **Lambda Runtime Interface Emulator**
+- Deploy your image to ECR
+
+```
+FROM public.ecr.aws/lambda/provided:al2
+
+# Install Python and dependencies
+RUN yum install -y python3 && \
+    pip3 install --upgrade pip
+
+# Copy your function code and bootstrap script
+COPY app.py bootstrap /var/runtime/
+
+# Make bootstrap executable
+RUN chmod +x /var/runtime/bootstrap
+
+# Set the entrypoint
+CMD ["/var/runtime/bootstrap"]
+```
+
+### Best Practice
+- Use multi-stage build, so final image is small/simple.
+- Use AWS provided built images
+- Build stages from most frequently changing to least (caching)
+- Use a single repository for functions with large Layers
+
+## Lambda Versions and Aliases
+
+### Versions
+- $LATEST version for development
+- Create a version when ready to publish - UI Publish - set Versions
+- Immutable - cannot change assigned version for a function
+- Code version is fixed, gets a unique ARN
+- Each version can be accessed and used
+
+### Alias
+- Pointers to different Lambda **versions**
+- Mutable, can change which version is pointed to.
+- Cannot reference other Aliases
+- Example
+  - dev alias to alpha version
+  - test alias to beta version
+  - prod alias to v1
+- Aliases can enable Canary deployment
+  - Split weighting of Alias to 2 different **versions** using a percentage.
+
+## Lambda and CodeDeploy
+- CodeDeploy can automate traffic shift for **Aliases**
+- E.g. shifting the weighting for the target version in the Alias during a Canary deployment
+
+### Strategies
+- **Linear**: grow traffic every N minutes until 100%
+- **Canary**: try X percentage, then after time, switch to 100%
+- **All At Once**: immediate 100%
+
+#### Rollback
+- Can create pre-post hooks to rollback on failure
+- Uses **AppSpec.yml**
+```
+version: 0.0
+Resources:
+  - MyLambdaFunction:
+      Type: AWS::Lambda::Function
+      Properties:
+        Name: my-lambda-function-name
+        Alias: live
+        CurrentVersion: 1
+        TargetVersion: 2
+```
+
+## Lambda Function URL
+- Expose a function without using other services, use a function URL.
+- Creates a fixed URL, any HTTP client can access it.
+- Only works with Public internet, never private.
+- Supports CORS
+- Target an Alias, or ONLY the $LATEST version.
+- Throttle using the Reserved Concurrency.
+
+### Function URL Security
+- Resource based policy
+  - Authorised accounts
+  - CIDR Ranges
+  - IAM Principal
+- CORS
+  - When domains are different, to allow browser to use the Lambda response.
+
+### AuthType: None
+- Allows Public unauthorised access
+- Uses Resource based policy granting public access
+
+### AuthType: IAM
+- IAM is used to authorise and authenticate requests
+- Both principals Identity based policy & resource based policy are evaluated
+- Same account: IBP OR RBP as Allow
+- Cross account: IBP AND RBP as Allow
+
+## CodeGuru
+- Provides insights into your functions
+- Creates a Profile group in the Lambda functions, needs permission to do it `AmazonCodeGuruProfilerAgentAccess`.
+- Supports runtimes: Java, Python.
+- Activated from within the AWS Console.
+
+## Lambda Limits - Review
+- Per region, per account
+
+### Execution Limits
+- Memory 128MB to 10GB (increases in 1MB increments).
+- Max time: 900 seconds (15 minutes)
+- Environment Variables: Max 4KB total for all vars.
+- /tmp: 512MB to 10GB
+- Concurrency: 1000 max
+
+### Deployment Limits
+- Lambda function deployment size
+  - Compressed zip: 50MB max
+  - On un-compress: 250MB max
+- Environment variables: Max 4KB
