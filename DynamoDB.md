@@ -9,8 +9,8 @@
 - NoSQL, doesn’t have RDS structure
 - Available across AZs
 - Scales – distributed database
-- Millions of requests per second, trillions on rows, 100s TB of storage.
-- Fast, low latency
+- Millions of requests per second, trillions of rows, 100s TB of storage.
+- Fast, low latency.
 - Fully integrated with IAM
 - Low cost
 - Standard and Infrequent Access tiers
@@ -32,7 +32,7 @@
 
 Option 1: Partition Key (Has)
 
-- Must be unique for each time
+- Must be unique for each item
 - Diverse – so data is distributed
 - Example: User_ID, other table attributes are not included in the key
 
@@ -44,10 +44,10 @@ Option 2: Partition Key + Sort Key (HASH + RANGE)
 
 ## How to choose a partition key, example of these fields
 
-Movie_id – good, all unique, high cardinality
-Producer_name
-Lead_actor_name
-Movie_language – very poor, single language, e.g. English could skew partition, so data not evenly distributed.
+- Movie_id – good, all unique, high cardinality
+- Producer_name
+- Lead_actor_name
+- Movie_language – very poor, single language, e.g. English could skew partition, so data not evenly distributed.
 
 ## Demo
 
@@ -57,6 +57,8 @@ Movie_language – very poor, single language, e.g. English could skew partition
 - Capacity calculator
 - Read write mode: On-demand, or Provisioned (in the free tier)
 - Read and Write capacity (fixed or auto-scaling), up to 10 within the free tier (e.g. 2 for read, 2 for writes)
+  - Can turn on auto-scaling, set min, max capacity and target utilisation percentage.
+  - Auto-scaling is be set separately for both Read and Write capacity
 - Secondary index
 - Can encrypt at rest
 
@@ -64,14 +66,14 @@ Movie_language – very poor, single language, e.g. English could skew partition
 
 Can switch between modes every 24 hours.
 
-Provisioned Mode
+### Provisioned Mode
 
 - Specify number of read/writes per second
 - Plan capacity before hand
 - Pay for provisioned read/write capacity units
 - Cheaper
 
-On-Demand Mode (default)
+### On-Demand Mode (default)
 
 - Read/write scales automatically in/out with workloads
 - Pay for what you use
@@ -84,9 +86,9 @@ On-Demand Mode (default)
 - Table must have provisioned RCU and WCU
 - Can setup up optional auto-scaling of throughput
 - **Burst capacity**: temporary exceeding of throughput allowed.
-  - Exhausting this will through exception: ProvisionedThroughputExceededException
+  - Exhausting this will throw exception: ProvisionedThroughputExceededException
   - Strategy is to adopt exponential backoff retry
-- Formulas (exam will ask)
+- Formulas **(exam will ask)**
   - Calculating WCUs
     - 1 WCU is 1 write per second up to 1KB in size, examples:
     - 10 items per second at 2KB = 20 WCUs
@@ -98,12 +100,12 @@ On-Demand Mode (default)
     - > 4KB is rounded up to nearest full 4KB
     - 10 strongly consistent reads at 4KB = 10 RCUs
     - 16 eventually consistent reads at 12KB = 24 RCUs
-      - (16/2) * (12/4) = 8*3 = 24
+      - (16/2) x (12/4) = 8x3 = 24
     - 10 strongly consistent reads p/s at 6KB = 20 RCUs
       - Rounded up from 6KB to 8KB
-      - 10 _ (8/4) = 10 _ 2 = 20
+      - 10 x (8/4) = 10 x 2 = 20
 
-## Partitioning Internal
+## Partitioning Internals
 
 - ID Key goes through a hash function to determine which partition the data should be sent to.
 - WCUs and RCUs are divided and spread evenly across partitions.
@@ -113,9 +115,9 @@ On-Demand Mode (default)
     - Hot partitions
     - Very large items
   - To resolve
-    - Exponential backup
-    - Distrbute partition key better
-    - Accelerator
+    - Exponential backoff
+    - Distribute partition key better
+    - Accelerator (?)
 
 ## R/W Capacity On-Demand
 
@@ -134,5 +136,122 @@ On-Demand Mode (default)
   - May get stale data as read not fully replicated across all replicas
 - Strongly Consistent Reads
   - No stale data on read
-  - Request this in the Table query, set ConsistentRead parameter to true, Not set for entire table.
+  - Request this in the Table query, set `ConsistentRead` parameter to true, Not set for entire table.
   - Consumes twice RCU
+
+## Operations
+
+| Operation | Name               | Description                                                                                                  |
+| --------- | ------------------ | ------------------------------------------------------------------------------------------------------------ |
+| Write     | PutItem            | Create or replace item with same partition key                                                               |
+|           | UpdateItem         | Edit or add, can use **Atomic counters**                                                                     |
+|           | Conditional Writes | Allow write only if conditions are met. For concurrency, no performance impact.                              |
+| Read      | GetItem            | Read based on PK, Hash or Hash+Range, Eventually or strongly consistent, can use `ProjectionExpression`      |
+|           | Query              | KeyConditionExpression: Partition key (requried), sort key (optional)                                        |
+|           |                    | FilterExpression: Additional to KeyCondition, uses only non-PK attributes.                                   |
+|           |                    | Can query a table, local secondary index, or global secondary index                                          |
+|           | Scan               | Export entire table, returns up to 1MB of data, use Limit to reduce RCUs, Use parallel scan for performance. |
+|           |                    | Can use with filter and project expressions                                                                  |
+|           | Returns            | Limit of items to return, or up to 1 MB, use pagination to exceed.                                           |
+| Delete    | DeleteItem         | Delete single item, can be conditional                                                                       |
+|           | DeleteTable        | Delete whole table and all items, quicker than calling DeleteItem on all items.                              |
+| Batch     |                    | Can save latency by batching items, operations are parallel to speed up, need to retry for failed items      |
+|           | BatchWriteItem     | Up to 25 PutItem or DeleteItem per call                                                                      |
+|           |                    | Up to 16MB of write data, 400KB max per item                                                                 |
+|           |                    | Cannot batch **Update**                                                                                      |
+|           |                    | UnprocessedItems: failed writes, use exponential backoff or increase WCU, and retry.                         |
+|           | BatchGetItem       | Returns items from 1+ tables. Items retrieved in parallel for performance.                                   |
+|           |                    | Up to 100 items, or 16MB data max                                                                            |
+|           |                    | **UnprocessedKeys**: for failed reads returned, using exponential backoff, or increase RCUs.                 |
+
+### PartiQL
+
+This is a SQL style query language for CRUD operations, doesn't not enhance main operations, only runs against a single table, **no table joins**.
+
+Example:
+
+```
+UPDATE "Users"
+SET Email = 'unique@example.com'
+WHERE UserId = '123'
+IF Email <> 'unique@example.com'
+
+SELECT * FROM "Orders"
+WHERE OrderDate BETWEEN '2025-01-01' AND '2025-11-22'
+AND Status = 'SHIPPED'
+
+# Example reading from index
+SELECT * FROM "Users"."EmailIndex"
+WHERE Email = 'alice@example.com'
+```
+
+## Conditional Writes
+
+For Put, Update, Delete Item & BatchWriteItem.
+
+### Conditions
+
+- attribute_exists
+- attribute_not_exists
+- attribute_type
+- contains (for string)
+- begins_with (for string)
+- ProductCategory IN (:cat1, :cat2) and Price between :low and :high
+- size (string length)
+
+### Examples
+
+The example is to create an item, only where the email address does not already exist.
+
+```
+aws dynamodb put-item \
+    --table-name Users \
+    --item file://item.json \
+    --condition-expression "attribute_not_exists(Email) OR Email <> :e" \
+    --expression-attribute-values file://condition-values.json
+```
+
+Files
+
+```
+# item.json
+{
+  "UserId": {"S": "123"},
+  "Email": {"S": "test@example.com"}
+}
+
+
+# conditional-values.json
+{
+  ":e": {"S": "test@example.com"}
+}
+
+```
+
+## Indexes
+
+### Local Secondary Index (LSI)
+
+- Alternative sort key for table, same partition key as base table.
+- **Define ONLY at table creation time**
+- Up to - must be scalar type: sting, number, binary
+- Can contain some or all attributes of the base table (KEYS_ONLY, INCLUDE, ALL)
+  - Example, if you want to query without LSI, you query on primary and sort, and then filter based on the attributes. But add LSI for the attributes, and you can query on that LSI.
+  - When creating it, you specify the **sort key** for the index and **index name**, and attributes to project. You will query using the base table partition key + new secondary key (LSI) and index name.
+
+### Global Secondary Index (GSI)
+
+- Alternative PK (Hash, or Hash + Range) from base table
+- Speeds up queries on non-key attributes
+- Scalar types
+- Can contain some or all attributes of the base table, KEYS_ONLY, INCLUDE, ALL)
+- **Can add it after table creation**
+- When creating it, need to specify a new **partition key** and optional **sort key** for the index, and index name, and attributes to project.
+- It's like a 'new' table, **so must provision RCUs and WCUs**.
+
+### Throttling on Indexes
+
+- GSI
+  - If writes are throttled on the GSI, the main table write is impacted - throttled also - need to allow GSI WCUs carefully.
+- LSI
+  - Uses WCUs and RCUs from base table, no separate throttling considerations.
