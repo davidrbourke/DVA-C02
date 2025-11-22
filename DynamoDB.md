@@ -255,3 +255,85 @@ Files
   - If writes are throttled on the GSI, the main table write is impacted - throttled also - need to allow GSI WCUs carefully.
 - LSI
   - Uses WCUs and RCUs from base table, no separate throttling considerations.
+
+## Optimistic Locking (aka Optimistic concurrency)
+
+- Conditional writes - DynamoDB has this feature to ensure an item has not updated before you update/delete it.
+- Attribute - version number on item.
+- Client gets latest version to update, and only updates if version number has not changed when it does the write, then it also increments the version.
+- If the version read has changed by the time of the write, the write is rejected.
+
+## DynamoDB Accelerator (DAX)
+
+- In-memory cache for Dynamo DB
+- Micro-second latency for cached read & write
+- No application logic required, just need to enable it.
+- Solves the 'hot key' problem, because the frequently access item will be cached.
+- 5 mins TTL
+- Up to 10 DAX cluster, can have multi-AZ (3 recommended for Prod).
+
+### DAX vs ElastiCache
+
+- DAX
+  - Individual object cache for simple queries.
+- ElastiCache
+  - Can cache the result of some complex calculation that would normally be done in code repeatedly.
+- Can use DAX and ElastiCache in combination.
+
+### DAX Demo
+
+- In DynamoDB > DAX > Clusters - Create Cluster
+- Cluster name
+- Node families
+  - t-type - bursting, for lower throughput.
+  - r-type - fixed capacity, for always ready capacity
+  - All families
+- Node types
+  - e.g. dax.t2.small, vCPU and Memory
+- Cluster size (3 for multi-AZ)
+- Network - Subnets - need to create a subnet in the VPC
+- Access control - security group to access DAX cluster, open port 8111 or 9111 (for encrypted in transit),
+- AZ location
+- IAM Permissions - role to give DAX access to DynamoDB, all, or limited tables.
+- Parameter groups, e.g. Item TTL and Query TTL (5 mins default on both)
+- Maintenance Windows, no preference or specific time window
+- Cluster endpoint - this is what the application should use to access the cluster.
+
+## DynamoDB Streams
+
+- Ordered steam of item-level modifications, e.g. every CRUD operation.
+- Can be sent to:
+  - Kinesis data streams (receiver)
+  - Lambda function (can pull)
+    - Enable **Event Source Mapping** to read from Stream
+    - Ensure Lambda has permissions to access the Stream
+    - Lambda is invoked Synchronously ?
+  - Kinesis client library applications
+- Data retention 24 hours - need to persist elsewhere
+- Use case
+  - react to real-time changes in the DB
+  - analytics
+  - implement cross region replication
+  - insert into derivative tables
+  - insert into OpenSearch Service (via Kinesis Data Stream -> Firehose => OpenSearch)
+- Can choose info appearing in the data stream:
+  - KEYS_ONLY - only the key attributes of the modified item
+  - NEW_IMAGE - the entire item after modification
+  - OLD_IMAGE - entire item before modification
+  - NEW_AND_OLD_IMAGES - both of above
+- Streams are made of Shards, AWS provisions them automatically
+- Records are not retroactively once stream enabled, only new updates.
+
+### Demo
+
+- Uses Lambda Stream
+- Trigger: needs to be set on the DynamoDb stream option
+  - Choose Lambda function to be invoked when stream is updated
+  - Can use a Lambda blueprint: dynamodb-process-stream
+  - Lambda needs permissions
+    - Role: add policies
+      - AmazonDynamoDBReadOnlyAccess
+      - AWSLambdaDynamoDBExecutionRole
+  - Choose DB Table for Stream
+  - Batch window - to batch up item updates before invoking Lambda
+  - Starting position
