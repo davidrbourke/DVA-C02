@@ -337,3 +337,168 @@ Files
   - Choose DB Table for Stream
   - Batch window - to batch up item updates before invoking Lambda
   - Starting position
+
+## TTL Time to Live
+
+- Automatically delete items after expiry time.
+- No WCUs consumed
+- Number datatype: Unix Epoch timestamp
+- Items deleted within a few days of expiration
+- Items expired but not deleted still show up in read/query/scans - need to filter them out if you don't want to see them.
+- Items also deleted from indexes
+- A delete operation for expired items appears in DynamoDB Streams
+- When creating the item, you set an expire_on attribute (Unix epoch).
+- Enable the Time to Live, set the name of the attribute to look for (expire_on).
+
+## DynamoDB CLI
+
+(Exam likely to ask about these).
+
+- `--projection-expression`: one of more attributes to retrieve.
+- `--filter-expression`: filter items before returning
+- `--page-size`: for pagination, retrieve full list of items, but split into smaller API calls, default: 1000 items.
+- `--max-times`: max number of items to show in the CLI, return NextToken
+- `--starting-token`: specify the last NextToken to retrieve the next set of items.
+
+```
+# Retrieves all items (e.g. 3 items but in 3 API calls)
+aws dynamodb scan --table-name UserPosts --page-size 1
+
+# Fetch next item, uses NextToken return from initial --max-times scan
+aws dynamodb scan --table-name UserPosts --max-items 1 --starting-token ey........
+```
+
+## Transactions
+
+- All or nothing add/update/delete item for multiple items across one or more tables.
+- Atomic ACID
+- Read Modes - Eventual consistency, strong consistency, **transactional**
+- Write Modes - standard, **transactional**
+- Consumes 2x WCUs & RCUs, as DB performs 2 operations for transactional ops.
+- Two operations:
+
+  - TransactGetItem - one or more GetItem
+  - TransactionWriteItem - one or more PutItem, UpdateItem, DeleteItem
+
+- **Important for exam, is calculation of transactional WCUs**
+- WCUs example: 3 transactional write p/s with 5KB item
+  - (3x1) x (5KB/1KB) x 2 = 30 WCUs
+- RCUs example: 5 transactions read p/s, with item 5KB
+  - 5 x (8KB/4KB) x 2 = 20 RCUs
+
+## DynamoDB Session State
+
+- Can store session state as a cache, so can be shared across instances, e.g. User log in Session.
+- ElastiCache also does this, but ElastiCache is in Memory
+- DynamoDB is serverless, can scale better than ElastiCache.
+- EFS can also be used for Cache for EC2 instances, but other two options are better.
+
+## Partitioning Strategies
+
+Some scenarios might not have a good distributed Partition key, e.g. natural key is Candidate_ID for voting and there are only 2 Candidates, you could get a hot ket. In this scenario you can add a suffix to the key, e.g.
+
+- Candidate_A, - Candidate_B, becomes
+- Candidate\*A**\*20**, - Candidate\*B**\*72**, Candidate\*A**\*100**, - Candidate\*B**\*712**, etc.
+- The suffix methods;
+  - Sharding using random suffix
+  - Sharding using calculated suffix
+
+## Write Types
+
+- Concurrent writes/Optimistic locking
+  - To avoid dirty writes, use **Conditional writes**, using a version on the record, or checking the attribute hasn't updated.
+- Atomic Writes
+  - incrementing on top of previous update (?)
+- Batch writes
+  - User updates a batch of records
+
+## Large Objects Pattern
+
+Due to 400KB item size limit, use an S3 for large objects, and store the pointer to the object in S3.
+
+- Client will read the DB to get the S3 address, and then client will get the object from the S3 bucket.
+
+## Indexing S3 Object Metadata
+
+- Flow:
+  - Write to S3
+  - Lambda triggers on event to sent S3 Metadata to store in DynamoDB, this can be indexed.
+- This allows you to query the DynamoDB for S3 objet metadata, which you could not do directly or efficiently on S3.
+
+## Operations
+
+- Table clean up, 2 options:
+  1. Scan + DeleteItem (Slow, and expensive)
+  2. Drop table + Recreate table (fast and cheaper)
+- Copy Table, 3 options:
+  1. Using AWS Backup - managed service to create point-in-time backups of DynamoDB and other AWS resources.
+  2. Using AWS Glue - a serverless ETL service, can read from DynamoDB and write to another.
+  3. Scan + PutItem or BatchWriteItem, write your own code to call these operations.
+
+## Security
+
+- Security
+  - VPC Endpoints available to access DB without using internet
+  - Access to DB can be controlled via IAM
+  - Encryption at rest using AWS KMS and in transit using SSL/TLC
+
+## Other features
+
+- Backup and restore
+
+  - Point in time recovery (PITR)
+  - No performance impact (?)
+
+- Global Tables
+
+  - Multi-region, fully replicated, high performance - needs to be enabled
+
+- DynamoDB Local
+  - Can develop against local DB without using service in AWS
+- AWS Database Migration Service (AWS DMS) can be used to migrate DynamoDB from MongoDB, Oracle, MySQL, S3, etc.
+
+- Fine grained access
+  - To give public or app use access to DynamoDB specific Table, use Identity providers:
+  - Amazon Cognito User Pools
+  - Google
+  - Facebook
+  - OpenID Connect
+  - SAML
+- Users log in with the ID provider, get temporary AWS credentials, credentials used to obtain IAM role - this role should only allow access to required tables.
+
+  - IAM Role has Conditions
+
+  ```
+  {
+  "Version": "2012-10-17",
+  "Statement": [
+    {
+      "Sid": "ReadOnlyTenantTable",
+      "Effect": "Allow",
+      "Action": [
+        "dynamodb:GetItem",
+        "dynamodb:BatchGetItem",
+        "dynamodb:Query",
+        "dynamodb:Scan",
+        "dynamodb:DescribeTable"
+      ],
+      "Resource": "arn:aws:dynamodb:us-east-1:<ACCOUNT_ID>:table/Tenant123Orders",
+      "Condition": {
+        "ForAllValues:StringEquals": {
+          "dynamodb:LeadingKeys": ["${cognito-identity.amazonaws.com:sub}"],
+          "dynamodb:Attributes": [
+            "OrderId",
+            "OrderDate",
+            "Status",
+            "TotalAmount"
+          ]
+        }
+      }
+    }
+  ]
+  }
+
+  ```
+
+  - **cognito-identity.amazonaws.com:sub** will get replaced with the users 'tenant' at runtime.
+  - Can also limit the attributes.
