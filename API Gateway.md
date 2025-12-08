@@ -395,3 +395,13 @@ To make API available and control access to different clients, setup a Usage Pla
 - A single interface for all your microservices
 - Use different API Endpoints to different microservices
 - Use Route53 to setup a domain for the API Gateway and apply SSL certificates.
+
+## Signature V4
+
+A method for authenticating API calls, it doesn't use an API Key. Instead you use the SigV4 signing process:
+
+1. Create a canonical request based on the request details
+2. Calculating a signature using your AWS Credentials
+3. Adding the signature into a request header.
+
+AWS replicates this process and compares the signatures. Key is scoped to the service, region, and day of the request.
