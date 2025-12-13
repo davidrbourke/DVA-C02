@@ -140,7 +140,7 @@ Outputs:
     Value: !Ref MyDynamoDBTable
 ```
 
-# #SAM Policy Templates
+## SAM Policy Templates
 
 For AWS Lambda created from SAM, you can assign the Lambda's permissions using pre-defined SAM policy names, full list: https://docs.aws.amazon.com/serverless-application-model/latest/developerguide/serverless-policy-template-list.html. Examples:
 
