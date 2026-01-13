@@ -72,7 +72,7 @@ aws iam list-users
 
 ## IAM Roles
 
-- Permissions you give to a service to perform actions, uses IAM Roles, e.g. an EC2 trying to access some information using the IAM Role. An IAM Role is like an IAM User role, but assigned to a service or application, so the service can access the resource as the with the identity of the Role that is assumes.
+- Permissions you give to a service to perform actions, uses IAM Roles, e.g. an EC2 trying to access some information using the IAM Role. An IAM Role is like an IAM User role, but assigned to a service or application, so the service can access the resource with the identity of the Role that it assumes.
 - The Role is created for the Service, and a Policy is assigned to the Role.
 
 ### Example
@@ -81,7 +81,7 @@ aws iam list-users
 - Create a Role, assign a Permission to the Role, for the Permission use the Policy: IAMReadOnlyAccess.
 - Assign the new Role to the EC2 instance IAM Role (EC2 Instance > Actions > Security > Modify IAM Role - choose the new role and save.)
 
-Another example would be an EC2 instance trying to access and S3 bucket. Either from the AWS CLI or an API call, permission would be needed to access the S3 bucket with a Role with a Policy like this:
+Another example would be an EC2 instance trying to access an S3 bucket. Either from the AWS CLI or an API call, permission would be needed to access the S3 bucket with a Role with a Policy like this:
 
 ```
 {

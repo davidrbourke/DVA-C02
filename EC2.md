@@ -100,7 +100,7 @@ Web Browser - EC2 Instance Connect - Only works with Amazon Linux 2 (OS on VM). 
 
 SSH into EC2 and run `aws iam list-users`. This will return `Unable to locate credentials. You can configure credentials by running "aws configure".`  
 **Do not run aws configure**, this would give anyone who accesses the EC2 instance permissions with your credentials. You need to assign a role to the EC2 in the AWS Console. Go to the EC2 Instance options `Actions` > `Security` > `Modify IAM role`. Here you can assign the role with permissions.  
-For this a role was create in IAM for EC2 called DemoRoleForEC2 and assigned to the EC2 with a policy of **IAMReadOnlyAccess**. Output of `aws iam list-users` is now:
+For this a role was created in IAM for EC2 called DemoRoleForEC2 and assigned to the EC2 with a policy of **IAMReadOnlyAccess**. Output of `aws iam list-users` is now:
 
 ```
 {
