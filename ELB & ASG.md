@@ -62,7 +62,7 @@ A Layer 7 load balancer supports HTTP/S and Websockets. Good for microservices, 
 - Include User data to use Apache webserver and have the custom index.html that shows the hostname of the EC2 instance.
 - Each EC2 instance can be accessed directly using its public IP.
 
-2. Create a Application Load Balancer
+2. Create an Application Load Balancer
 
 - Schemes: Internet-facing, or Internal (choose Internet-facing)
 - IP Address Type: IPv4, Dualstack (choose IPv4)
@@ -78,10 +78,10 @@ A Layer 7 load balancer supports HTTP/S and Websockets. Good for microservices, 
 
 - ALB will switch between the EC2 Instances.
 
-6. Add a custom rule to route traffic for the ~hostname~/error to an error page:
+6. Add a custom rule to route traffic for the _hostname_/error to an error page:
 
 - On the listener configuration for the ALB add a new rule
-- Add Conditions: filter on **Path** is /error
+- Add Conditions: filter on **Path** is `/error`
 - Add Action: Return fixed response as returning some error text and 404 HTTP status.
 - Set Priority as 5, priority is used to resolve where multiple rules are matched by a single request.
 

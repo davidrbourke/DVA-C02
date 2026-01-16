@@ -25,7 +25,7 @@
 
 ## Storage auto-scaling
 
-When you create the DB you specify storage space required. As you get closer using up the space, more space is **automatically** made available (if enabled).
+When you create the DB you specify storage space required. As you get closer to using up the space, more space is **automatically** made available (if enabled).
 
 - Set a Maximum Storage Threshold
 - Rules to automatically modify storage:
@@ -43,7 +43,7 @@ If you have an application with a high number of reads, a single RDS instance ma
 - Eventually consistent - reads are **asynchronous**.
 - A read replica can be promoted out of the read-replicas to become its own write database
 - The connection string in the application must include all the read replicas included.
-  - Auto-scaling and a reader endpoint is only available in RDS Aurora - for non-Aurora RDS, you would have to manually scale in/out read-replicas and update the connection string with the read replicas (although there are work-arounds).
+  - Auto-scaling a reader endpoint is only available in RDS Aurora - for non-Aurora RDS, you would have to manually scale in/out read-replicas and update the connection string with the read replicas (although there are work-arounds).
 - Example of a use: A reporting database, that you don't want to slow down the application database, can read data from a read-replica.
 
 ### Network Costs
@@ -74,7 +74,7 @@ This is **NOT** the same as Read Replicas, it is for Disaster Recovery.
 
 A proprietary database from AWS.
 
-- Postgres and MySQL are both supported as Aurora Databases. The drivers work as if Aurora was either of those DBs. When you create the DB, you have to chose either the Postgres Aurora version or MySQL Aurora version.
+- Postgres and MySQL are both supported as Aurora Databases. The drivers work as if Aurora was either of those DBs. When you create the DB, you have to choose either the Postgres Aurora version or MySQL Aurora version.
 - Aurora is cloud optimized, 5x performance of MySQL, 3x over Postgres.
 - Storage automatically grows
   - Starts at 10GB
@@ -250,7 +250,7 @@ https://aws.amazon.com/caching/best-practices/
 3. Read from cache
 4. Data is never stale
 5. There is write penalty, write/write
-6. There is missing data until the cache is updated - might chose to combine with cache-aside to hydrate the cache, e.g. to recover from failure
+6. There is missing data until the cache is updated - might choose to combine with cache-aside to hydrate the cache, e.g. to recover from failure
 7. Cache churn - a lot of data written to the cache may never be read
 
 ```
