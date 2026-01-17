@@ -2,16 +2,16 @@
 
 ## Domain Name System (DNS)
 
-- Translates human readable hostnames into the machine IP
+- Translates human readable host names into the machine IP
 - www.someapp.com => 111.111.111.11
 - Hierarchical naming structure:
   .com
   example.com
   www.example.com
   api.example.com
-- Domain Registrar: a place to register the domain names, e.g Amazong Route 53, GoDaddy, etc
+- Domain Registrar: a place to register the domain names, e.g Amazon Route 53, GoDaddy, etc
 - DNS Records: A, AAAA, CNAME, etc
-- Zone File: contains DNS records to match hostnames to IP addresses
+- Zone File: contains DNS records to match host names to IP addresses
 - Name Server: resolves DNS queries
 - Root Level Domain (RLD): .
 - Top Level Domain (TLD): .com, .co.uk
@@ -34,7 +34,7 @@
 ## Route 53 Overview
 
 - A managed, scalable, authoritative DNS (authoritative means you can update DNS records)
-- A domain name registrar, you can regiser domain names (e.g. myapp.com)
+- A domain name registrar, you can register domain names (e.g. myapp.com)
 - Health checks on your resources
 - 100% Availability (only service in AWS to be 100%)
 
@@ -69,7 +69,7 @@
 
 You have to pay to register a domain in AWS Route 53, e.g. example.com, but you can buy one here.
 
-- Turn on privary protection so your person details are not made public for the DNS record lookup - can lead to spam.
+- Turn on privacy protection so your personal details are not made public for the DNS record lookup - can lead to spam.
 - DNS Records get automatically created:
   - A, NS, CNAME
   - NS Namespace record will point to AWS Route 53 servers as the source.
@@ -87,7 +87,7 @@ Create a record for the domain name:
 
 ```
 sudo yum install -y bind-utils
-nslookup test.example.com # returns non-authoritate answer of target IP
+nslookup test.example.com # returns non-authoritative answer of target IP
 dig test.example.com # returns more details about the record type and TTL
 ```
 
@@ -116,7 +116,7 @@ This is how the DNS responds to requests for information, it is not concerned wi
 - Simple
   - Route traffic to a single resource
   - Can specify multiple values, e.g. IPs, a random one is chosen by the client. For Alias, only one AWS resource can be specified.
-  - Can't be assocaited with health checks.
+  - Can't be associated with health checks.
 - Weighted
   - With multiple target values, you can weight the targets as a percentage of overall requests to go to a specific target, e.g. 10, 10, 30 = 50, traffic would be distributed 20%, 20%, 60%.
   - DNS records - all targets must be the same name and type
@@ -130,12 +130,12 @@ This is how the DNS responds to requests for information, it is not concerned wi
   - Secondary: Optionally associated with a health check.
   - Traffic is routed to the Primary, if the health check starts failing, traffic will be routed to the Secondary.
 - Latency based
-  - In the instance you have resources in mutiple regions, AWS Route 53 will calculate the target resource with the lowest latency for the users request, e.g. a user in the UK would be directed to a resource nearer to the UK, rather than a resource in the USA.
+  - In the instance you have resources in multiple regions, AWS Route 53 will calculate the target resource with the lowest latency for the users request, e.g. a user in the UK would be directed to a resource nearer to the UK, rather than a resource in the USA.
   - Can be used with health checks.
   - To create in AWS, you add multiple DNS records with the same 'name', but for each one, specify the target resource, **the region for it** (AWS does not workout where the target resource is based - you must tell it), and record ID.
 - Geolocation
   - This is different from Latency, where AWS Route 53 determines the lowest latency target.
-  - You specific the actual location of a client and which resource they are routed to.
+  - You specify the actual location of a client and which resource they are routed to.
   - Location options: Countries and Continents
   - You should also have a 'Default' record for clients outside of the ones you have Countries/Continents you have specified, otherwise they will not be able to reach your service.
 - Multi-value answer
@@ -147,8 +147,8 @@ This is how the DNS responds to requests for information, it is not concerned wi
   - Route traffic to resources based on the geographic location of the clients and the region
   - Define a **bias** to increase/decrease the 'area' of the geographic location to route clients to a region
   - To expand the area, increase the bias (1 to 99)
-  - To shirnk the area, decrease the bias (-1 to -99)
-  - Resources can be AWS resources, or non-AWS (e.g. on-prem, you need to specific the long/lat for the non-AWS region)
+  - To shrink the area, decrease the bias (-1 to -99)
+  - Resources can be AWS resources, or non-AWS (e.g. on-prem, you need to specify the long/lat for the non-AWS region)
   - Examples:
     1. Resources are in 2 regions, bias on both is 0, AWS chooses an 'equal' area in geographic proximity to each region.
     2. Resources in 2 regions, bias on one is 0, on the other is 50, it increases the geographic area of clients that will now be routed to the resource in the 2nd region.
@@ -168,20 +168,20 @@ This is how the DNS responds to requests for information, it is not concerned wi
 - It is automated DNS failover
 - Health checks can monitor
   - Endpoints, e.g, an EC2 instance, etc
-  - Other health checks (Calcualted Health Checks)
+  - Other health checks (Calculated Health Checks)
   - CloudWatch alarms, e.g. RDS metrics, custom metrics
 - There are 15 global health checkers that check the endpoints
   - Threshold is 3 unhealthy checks (default - configurable)
-  - > 18% of health checks report unhealthy
+  - greater than 18% of health checks report unhealthy
   - Interval is 30 seconds, can increase frequency to 10 seconds but costs more.
-  - Protocols: HTTP, HTTPS, TCP
-  - Can choose localtions you want Route 53 to use
+  - Protocols: HTTP, HTTPS, TCPt
+  - Can choose locations you want Route 53 to use
 - 2xx and 3xx HTTP response code are healthy
 - Can read first 5120 bytes of response body to check for some text, etc.
 - You must allow IP address of health checkers to access your resource, e.g, firewall/Security Group.
 - For private resource not accessible from the internet, the way to allow health checks to be used, is to create Cloud Watch metrics/alarms for the resource, then base the health check off of the Cloud Watch metric. You will not be able get the health checker to make a request directly to your private resource.
-- Health checks can be enabled on all Routing Policies except Simple. If enable (not Failover), Route 53 won't send traffic to an instance failing a health check.
-- The Failover policy is different, in that is just for having a Primary and Seconday, but you can use Daisy Chaining underneath to combine it with other policies.
+- Health checks can be enabled on all Routing Policies except Simple. If enabled (not Failover), Route 53 won't send traffic to an instance failing a health check.
+- The Failover policy is different, in that it's just for having a Primary and Secondary, but you can use Daisy Chaining underneath to combine it with other policies.
 
 ## Domain Registrar vs DNS Service
 
@@ -191,4 +191,4 @@ This is how the DNS responds to requests for information, it is not concerned wi
 - To configure:
   - Buy the domain with a registrar (if not buying through Route 53)
   - Create a Route 53 public Hosted Zone, Name Servers will be provided for the Hosted Zone
-  - Update the Name Servers on the domain registrator with the Name Servers for the Route 53 DNS Hosted Zone.
+  - Update the Name Servers on the domain registrar with the Name Servers for the Route 53 DNS Hosted Zone.

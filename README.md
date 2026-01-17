@@ -14,7 +14,7 @@ A curated list of documentation files for quick navigation:
 | 6. Route 53                                               | [Route 53](./Route%2053.md)                                           |
 | 7. VPC Fundamentals                                       | [VPC Fundamentals](./VPC.md)                                          |
 | 8. S3                                                     | [S3](./S3.md)                                                         |
-| 9. CLI, SDK, IAM Roles & Policies                         | [CLI, SDK, IAM Roles & Policies](./Random.md)                         |
+| 9. CLI, SDK, IAM Roles & Policies                         | [CLI, SDK, IAM Roles & Policies](./CLI,%20SDK,%20API.md)              |
 | 10. S3 Security                                           | [S3 Security](./S3%20Security.md)                                     |
 | 11. CloudFront                                            | [CloudFront](./CloudFront.md)                                         |
 | 12. ECS & ECR                                             | [ECS & ECR](./ECS%20&%20ECR.md)                                       |
