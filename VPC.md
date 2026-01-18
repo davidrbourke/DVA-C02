@@ -17,7 +17,7 @@
 Within the VPC:
 
 - Public Subnet - accessible from the internet
-- Private Subnet - not accessibale from the internet
+- Private Subnet - not accessible from the internet
 
 ![VPC Diagram](VPC-diagram-example-1.PNG)
 Source: https://www.kerno.io/learn/what-is-aws-vpc-tutorial
@@ -30,14 +30,14 @@ Source: https://www.kerno.io/learn/what-is-aws-vpc-tutorial
 
 ## NAT Gateways and NAT Instances
 
-- NATs allow your instances to connect to the internet, e.g. to get updates, while remaning Private.
+- NATs allow your instances to connect to the internet, e.g. to get updates, while remaining Private.
 - NAT is Network Address Translation (NAT)
 - **NAT Gateways** are AWS managed
 - **NAT Instances** are self-managed
 - The NAT is deployed in the Public subnet
 - The NAT connects to the **Internet Gateway** to access the internet
 - The Instances in the Private Subnet connect to the NAT in the Public subnet to access the internet.
-- Example of use: This would be required if an EC2 Instance in the private subnet needs to connect to an AWS RDS, EFS, ElastiCache, etc, and it going over the public internet (not using the AWS Network via a VPC Endpoint).
+- Example of use: This would be required if an EC2 Instance in the private subnet needs to connect to an AWS RDS, EFS, ElastiCache, etc, and is going over the public internet (not using the AWS Network via a VPC Endpoint).
 
 ## Network Access Control List (NACL)
 
@@ -65,19 +65,18 @@ A firewall that controls traffic to an EC2 Instance or Elastic Network Interface
 These are logs that capture all network traffic issues.
 
 - Types:
-
   - VPC Flow logs
   - Subnet Flow logs
   - Elastic Network Interface flow logs
 
-- They can help to troubleshoot convectivity issues between internet -> subnet, subnet -> subnet, subnet -> internet.
+- They can help to troubleshoot connectivity issues between internet -> subnet, subnet -> subnet, subnet -> internet.
 - Captures network traffic issues from Managed interface:
   - Elastic Load Balancers, ElastiCache, RDS, Aurora, etc.
 - VPC FLow logs can be directed into other services, such as S3, CloudWatch Logs.
 
 ## VPC Peering
 
-- VPC Peering allows conectivity between two separate VPCs using AWS's network.
+- VPC Peering allows connectivity between two separate VPCs using AWS's network.
 - They act as if they are on the same network, so the CIDR ranges of the two VPCs must not be overlapping.
 - It is not transitive, meaning that only VPC's directly peered can connect to each other, e.g., VPC 1 is connected to both VPC 2 and VPC 3, does not mean VPC 2 and VPC 3 can connect with each other. The only relationships are VPC 1 to VPC 2, and VPC 1 to VPC 3.
 
@@ -119,6 +118,6 @@ For the exam, there may be some questions on Architectures.
 Sending an Image using a Wordpress Environment using:
 
 - Route 53
-- EC2 Instances in mutliple Availabiliy Zones
+- EC2 Instances in multiple Availability Zones
 - Elastic Network Interface (ENI) to allow communication to store the images on:
 - An Elastic File Share (EFS)
