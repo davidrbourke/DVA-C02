@@ -39,7 +39,7 @@ Example of a bucket policy to enforce an encryption type of SSE-KMS:
 - **Enabled by default for new buckets and new objects**
 - Keys managed, and owned by AWS
 - AES 256 Encryption
-- To use SSE-S3, you must set header to **x-amz-server-side-encryption: "AES-256"** when saving the object (if overridding a different default encryption).
+- To use SSE-S3, you must set header to **x-amz-server-side-encryption: "AES-256"** when saving the object (if overriding a different default encryption).
 - You have no control over this key and no access to it, you don't pay to access it.
 
 #### Key Management Service Keys (SSE-KMS)
@@ -47,7 +47,7 @@ Example of a bucket policy to enforce an encryption type of SSE-KMS:
 - Using AWS KMS to manage encryption keys
 - You control the key and can audit the key's usage in Cloud Trail
 - You can recycle the key
-- Must set header to **x-amz-server-side-encryption: "aws:kms"** (if overridding a different default encryption).
+- Must set header to **x-amz-server-side-encryption: "aws:kms"** (if overriding a different default encryption).
 - You may be impacted by KMS limits and you pay for accesses to the key when the object is encrypted/decrypted.
 - Each call to encrypt or decrypt will call the KMS API, so may going into a throttling limit (5500, 10000, 30000 req/s based on region)
 - You can request a quota to increase the limit using Service Quota Console.
@@ -105,7 +105,6 @@ Example of a bucket policy to enforce an encryption type of SSE-KMS:
 
 - **Example**:  
   A user visits `https://example.com`. The page includes JavaScript that sends a request to `https://api.other.com`.
-
   - The browser _does_ send the request to `api.other.com`.
   - However, the browser will **block access to the response** unless `api.other.com` includes the header:  
     `Access-Control-Allow-Origin: https://example.com`
@@ -230,7 +229,7 @@ For a scenario where you have separate directories in the S3 bucket, and you wan
   - A VPC Endpoints must be created in the VPC with a policy allowing it to access the the Access point
   - | VPC: EC2 Instance -> VPC Endpoint | Access point (VPC Origin) -> S3 Bucket |
 
-## S3 Object Lamda
+## S3 Object Lambda
 
 For a scenario where some operation needs to be run on the object extracted from the S3 bucket before it is returned, e.g. an additional analytics application needs to get the object with some data redacted. An AWS Lambda can be used, the analytics application requests to the AWS Lambda, the AWS Lamdba extracts the object and redacts the data, and returns the redacted object. There are access points between each resource:
 

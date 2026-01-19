@@ -25,7 +25,7 @@ EC2 Instance Metadata is metadata about the EC2 Instance that the EC2 instance c
 
 1. In the Console: IAM > Users > _user_ > Security credentials > Assign an MFA device
    - E.g. Virtual MFA Device (Authy), and go through the setup steps.
-   - For the assigned device, an arn with be generated, e.g., arn:aws:iam:_id_:mfa/user
+   - For the assigned device, an arn will be generated, e.g., arn:aws:iam:_id_:mfa/user
 2. In Console: `aws sts get-session-token --serial-number [arn for mfa device] --token-code [code from mfa device]`
    - This will return temporary Credentials including; AccessKeyId, SecretAccessKey, SessionToken, Expiration.
 3. Configure an AWS Profile locally:
@@ -40,7 +40,7 @@ EC2 Instance Metadata is metadata about the EC2 Instance that the EC2 instance c
 
 ## AWS SDK
 
-Software Development Kit (SDK), available in various languages. When using the SDK, if you don't a region or configure a default region when using the SDK, then it will use use-east-1 by default. The CLI uses the Python SDK underneath.
+Software Development Kit (SDK), available in various languages. When using the SDK, if you don't specify a region or configure a default region when using the SDK, then it will use use-east-1 by default. The CLI uses the Python SDK underneath.
 
 ## API Rate Limits
 
@@ -67,7 +67,7 @@ Service Quotas/Limits
 Limits how many resources can be run in an account:
 
 - Running On Demand Standard Instances: max 1152 vCPU
-- Use Service Quota API, or open a support ticket to increate the limits.
+- Use Service Quota API, or open a support ticket to increase the limits.
 
 ## AWS CLI Credentials Provider Chain
 

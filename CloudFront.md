@@ -25,7 +25,7 @@ Sources of content for CloudFront:
 
 ## CloudFront Demo
 
-Prerequesites: Create an S3 bucket with index.html and images. Do not make it a static website or make the file public.
+Prerequisites: Create an S3 bucket with index.html and images. Do not make it a static website or make the file public.
 
 1. CloudFront -> Create Distribution
 2. Name and description
@@ -48,14 +48,13 @@ Enhance the cache key to be more specific with a Cache Policy:
 
 - HTTP Headers:
   - None - fastest caching - no headers are used or forwarded to the Origin
-  - Whitelist - Headers included in the whitelst (so not all headers) are forwarded to the Origin.
+  - Whitelist - Headers included in the whitelist (so not all headers) are forwarded to the Origin.
 - Query String:
   - None: No query strings in cache key and none forwarded to the Origin
   - Whitelist: only specified query strings used in cache key and forwarded to the Origin
   - Include All-Except: all expect the specified query string are used in cache key and forwarded to the Origin
   - All: all query string used in cache key and forwarded to the Origin (worst caching performance if there are a lot of query strings)
 - Cookies:
-
   - None
   - Whitelist
   - Include All-Except
@@ -77,7 +76,6 @@ This is where you want headers, query string, cookies forwarded to the Origin bu
   - Whitelist
   - All
 - Cookies:
-
   - None
   - Whitelist
   - All
@@ -86,7 +84,7 @@ This is where you want headers, query string, cookies forwarded to the Origin bu
 
 ## Cache Invalidations
 
-Cached content at Edge locations expires with the TTL. If you update Origin content, the Edge location won't know. You can invalidate the cache in the AWS Console CloudFront Disribution. Options are to:
+Cached content at Edge locations expires with the TTL. If you update Origin content, the Edge location won't know. You can invalidate the cache in the AWS Console CloudFront Distribution. Options are to:
 
 - Invalidate the entire cache (e.g. using \*)
 - Invalidate specific files (e.g. index.html)
@@ -109,7 +107,7 @@ For when you have multiple different Origins, or you want different cache behavi
    - /\* paths route to Static content in an S3 that requires the Cookie
 2. Separating static from dynamic
    - Requests to S3 static content have no specific caching rules - so all content is cached
-   - Requests to Dynamic content (EC3 Intance) require more specific caching, so cache based on headers, etc.
+   - Requests to Dynamic content (EC3 Instance) require more specific caching, so cache based on headers, etc.
 
 ## Caching - Demo
 
@@ -147,9 +145,9 @@ Route traffic though CloudFront to VPCs without having to expose them directly t
 
 You don't need public IPs for the resources in the VPC.
 
-## CloudFront Geo Restictions
+## CloudFront Geo Restrictions
 
-You can restrict access to the distrubtions, using either:
+You can restrict access to the distributions, using either:
 
 - Allow List - approved countries
 - Block List - blocked countries
@@ -183,7 +181,7 @@ Similar to signed url with S3 bucket files, you can allow access to content with
 
 - Two key signers:
   - Trusted key group (recommended) - can use APIs to create and rotate keys
-  - AWS account CloudFront key pair - manage keys using the root acount and AWS Console (not recommended)
+  - AWS account CloudFront key pair - manage keys using the root account and AWS Console (not recommended)
 - In CloudFront distribution, create 1+ trusted key groups
 - Generate a public/private key pair:
   - Private key in your application generate the signed URL
