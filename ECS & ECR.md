@@ -5,7 +5,7 @@
 Docker image storage options:
 
 - Docker Hub - public images (https://hub.docker.com)
-- Amazon Elastic Container Registery (ECR)
+- Amazon Elastic Container Registry (ECR)
   - Private repository
   - Public repository - Amazon ECR Public Gallery (https://gallery.ecr.aws)
 
@@ -31,7 +31,7 @@ Docker container launched on ECS - EC2 Launch Type:
 ### ECS - Fargate Launch Type
 
 - You don't not provision and manage the infrastructure
-- It's 'serverless' (off course using EC2 underneath but managed by AWS)
+- It's 'serverless' (of course using EC2 underneath but managed by AWS)
 - You just create task definitions
 - AWS run the ECS Tasks for you based on CPU and RAM required
 - Scaling - just increase number of tasks
@@ -143,14 +143,14 @@ Docker container launched on ECS - EC2 Launch Type:
   - Listener on Port 80 HTTP
   - Create new Target group (HTTP on Port 80)
 - Launch
-  - A public url is generated, you can accss the webpage running the Nginx image in ECS.
+  - A public url is generated, you can access the webpage running the Nginx image in ECS.
   - You can see the 'Events' page for a log of all Events
 
 3. Launch more tasks
    - Cluster > {your cluster} > Services > {your service} > Tasks > Update service
    - Update the service to increase the number of desired tasks (e.g. to 3)
    - New tasks will be provisioned automatically on the FARGATE service
-   - Load the webpage and refresh, the ALB will load-balance across the mutliple instances of the running containers.
+   - Load the webpage and refresh, the ALB will load-balance across the multiple instances of the running containers.
 
 ## ECS Service Auto-scaling
 
@@ -182,7 +182,7 @@ Fargate does this automatically if using the Fargate launch type, for **EC2 Laun
 
 When you want to update the version of your Tasks, e.g. updated image, you can do rolling updates. Containers must be destroyed and new ones created. You specify:
 
-1. Minimum healthy percent: this defines how many tasks should be running at minimum, e.g. 10 tasks, 50%, 5 tasks could be destroyed at once, as long as 5 ar remaning.
+1. Minimum healthy percent: this defines how many tasks should be running at minimum, e.g. 10 tasks, 50%, 5 tasks could be destroyed at once, as long as 5 are remaining.
 2. Maximum percent: this defines how many tasks can be running concurrently, so how many new ones can be created when old ones are deleting. e.g. 200% with 10 tasks means all new tasks could spin up while old ones are deleting, you could temporarily be runing 20 tasks.
 
 100% Minimum healthy percent and 200% Maximum percent would ensure zero downtime. New tasks would be created before any were deleted.
@@ -209,12 +209,13 @@ When you want to update the version of your Tasks, e.g. updated image, you can d
 - ECS Service Auto Scaling can be enabled to add more Tasks when the Queue has more messages
 
 4. Intercept Tasks using Event Bridge
-   Event Bridge can be used to watch for Events in ECS, e.g. a stopped Task, Event Bridge can be configured to perform some action, e.g. email an Admistrator.
+
+- Event Bridge can be used to watch for Events in ECS, e.g. a stopped Task, Event Bridge can be configured to perform some action, e.g. email an Admistrator.
 
 ## ECS Task Definitions
 
 - Tasks are defined with a JSON file (UI helper in the AWS Console) to tell ECS how to run the Docker container.
-- 10 contatiners max per Task definition
+- 10 containers max per Task definition
 - Json definition contains:
   - Image name
     - Essential container (Yes/no) - at least 1 container must be an essential container, if an essential container stops, the Task will be stopped.
@@ -253,14 +254,14 @@ When you want to update the version of your Tasks, e.g. updated image, you can d
   - Pull from a secrets manager on Task startup:
     - SSM Parameter Store
     - Secrets Manager
-- Environment files - you can load a full set of environment file from an S3 bucket, called Bulk load.
+- Environment files - you can load a full set of environment variables from a file from an S3 bucket, called Bulk load.
 
 ### Data Volumes (Bind Mounts)
 
 - Share data between multiple containers
 - You can mount from an EFS for persistent storage, for temporary storage you can use a file system:
-  - EC2 Tasks - using EC2 Instance Storage, data is tied to the lifecyle of the EC2 instance.
-  - Fargate Tasks - using ephemeral storage, data is tied to the container lifecyle, size: 20 GiB (default) to 200 GiB.
+  - EC2 Tasks - using EC2 Instance Storage, data is tied to the lifecycle of the EC2 instance.
+  - Fargate Tasks - using ephemeral storage, data is tied to the container lifecycle, size: 20 GiB (default) to 200 GiB.
 - Use cases:
   - Share temporary data between containers
   - Side car container pattern, e.g. to send logging data to some other destination, main container writes to the storage, sidecar container reads from the storage and pushes the logs elsewhere.
@@ -301,7 +302,7 @@ How tasks are distributed:
 ]
 ```
 
-3. Spread - place the task evenly across instances based on a specified value, e.g., availabiliy-zone - the tasks would be placed evenly across Instances in different availability zones. Can have multiple spread values. For exmaple with the one below: Tasks will first be spread across zones and instances, then packed within those constraints to optimize memory usage.
+3. Spread - place the task evenly across instances based on a specified value, e.g., availability-zone - the tasks would be placed evenly across Instances in different availability zones. Can have multiple spread values. For example with the one below: Tasks will first be spread across zones and instances, then packed within those constraints to optimize memory usage.
 
 ```
 "placementStrategy": [
@@ -368,11 +369,11 @@ This is a CLI tool to help with building and releasing containerised apps on App
 
 - Provisions all the required infrastructure
 - Simplifies setup of environments so dev can focus on the app
-- Can create automated pipelines using CodePipline
+- Can create automated pipelines using CodePipeline
 - CoPilot assumes various defaults/best practice, you can set specific configuration in manifest.yml files that get generated for the application's CoPilot configuration.
 - Flow:
   - YAML or CLI of application architecture ->
-  - AWS CoPilot -> Prepares well-architectured infrastructure setup config files ->
+  - AWS CoPilot -> Prepares well-architected infrastructure setup config files ->
   - **CloudFormation** deploys in ECS, Fargate or App Runner.
 
 ```

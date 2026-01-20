@@ -173,9 +173,9 @@ Similar to signed url with S3 bucket files, you can allow access to content with
 ## Signed URL/Cookie flow
 
 1. User authorised and authenticated though an application (we have to build).
-2. The application requests the signed URL from CloudFront
+2. The application creates the signed URL using a private key
 3. The application returns the signed URL to the user
-4. The user can use the signed URL to request the content through CloudFront.
+4. The user can use the signed URL to request the content through CloudFront, it is validated in CloudFront using a public key uploaded to CloudFront
 
 ### Creating Signed URLs
 
