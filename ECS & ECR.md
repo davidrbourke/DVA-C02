@@ -356,12 +356,13 @@ Where tasks are allowed to run.
 ### ECR Commands to pull/push images to ECR
 
 You need to login Docker on the command line with the AWS ECR credentials and account details (vars: aws_account_id, region).
-`aws ecr get-login-password --region eu-west-1 | docker login --username AWS --password-stdin aws_account_id.dkr.ecr.eu-west-1.amazonaws.com`
-Docker commands
-`docker push aws_account_id.dkr.ecr.region.amazonaws.com/imagename:latest`
-`docker pull aws_account_id.dkr.ecr.region.amazonaws.com/imagename:latest`
-`docker build -t imagename .`
-`docker tag image/name:latest aws_account_id.dkr.ecr.eu-west-1.amazonaws.com/new-image-name:latest` - the tag needs the repository name
+
+- `aws ecr get-login-password --region eu-west-1 | docker login --username AWS --password-stdin aws_account_id.dkr.ecr.eu-west-1.amazonaws.com`
+- Docker commands
+- `docker push aws_account_id.dkr.ecr.region.amazonaws.com/imagename:latest`
+- `docker pull aws_account_id.dkr.ecr.region.amazonaws.com/imagename:latest`
+- `docker build -t imagename .`
+- `docker tag image/name:latest aws_account_id.dkr.ecr.eu-west-1.amazonaws.com/new-image-name:latest` - the tag needs the repository name
 
 ## AWS CoPilot
 
