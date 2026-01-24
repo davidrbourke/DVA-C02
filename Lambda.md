@@ -54,7 +54,7 @@ Anything remotely managed. **You** don't provision them.
     - Container must implement the Lambda Runtime API
     - ECS/Fargate preferred for running arbitrary Docker images
 - CloudWatch monitoring
-- Can provision up to 10GM of RAM per function
+- Can provision up to 10GB of RAM per function
   - Also increased CPU and Network
 
 ## Demo 1 - Intro
@@ -384,9 +384,9 @@ Some sources cannot invoke the Lambda directly, so Event Source Mapping is used.
   - Add trigger
     - SQS - choose the created Queue
     - Configure Batch size: 1 to ?
-    - Batch window - amount of time in seconds to gather messages be invoking function
+    - Batch window - amount of time in seconds to gather messages before invoking function
     - Enable trigger
-  - Need to configure IAM Role so Lambda has permission to read form the SQS by attaching `AWSLambdaSQSQueueExecutionRole` permission to the IAM Policy for the Lambda.
+  - Need to configure IAM Role so Lambda has permission to read from the SQS by attaching `AWSLambdaSQSQueueExecutionRole` permission to the IAM Policy for the Lambda.
   - Update the code in the function - print event and return "success"
 - To Test
   - Send a message to SQS via the SQS test send message console page
@@ -395,7 +395,7 @@ Some sources cannot invoke the Lambda directly, so Event Source Mapping is used.
   - Message in Queue will be removed as now processed by the Lambda function
 - **Disable the trigger** in the Console - to prevent cost and polling
 
-- Kinesis - if using Kinesis you would chose the trigger as Kinesis
+- Kinesis - if using Kinesis you would choose the trigger as Kinesis
   - Select the Data stream
   - Consumer - if using a fan out consumer mode in kinesis you can choose the consumer to listen for updates on.
   - Batch size: 100 default, number of records to read at once
@@ -404,7 +404,7 @@ Some sources cannot invoke the Lambda directly, so Event Source Mapping is used.
     - Latest
     - Trim horizon
     - At timestamp
-  - On-failure destination - destination to send discard records that could not be read
+  - On-failure destination - destination to send discarded records that could not be read
   - Retry attempts: -1 default, times to retry the function on error.
   - Max age of record: -1 default no limit, Max up to 7 days, max age of record Lambda sends to a function for processing
   - Split batch on error (checkbox) - if function returns an error, split the batch into two and retry.
@@ -422,7 +422,6 @@ These are the two types of data send to the Lambda.
   - E.g. invoking service, SQS, EventBridge, etc
   - Event is converted into an Object in your chosen language
 - Context
-
   - Data and methods that provide information about the Lambda itself, and runtime environment.
   - E.g. aws_request_id, function_name, memory_limit_in_mb
 
@@ -546,7 +545,7 @@ Example of a policy for Lambda to access Kinesis data stream - after invocation 
 ## Lambda Environment Variables
 
 - Key value pair (string)
-- Lambda service adds it own variables
+- Lambda service adds its own variables
 - Can add your own
 - Can add them in KMS to encrypt them
   - Encrypt with own key or Lambda service key
@@ -571,10 +570,10 @@ def lambda_handler(event, context):
 ## Lambda Logging and Monitoring
 
 - CloudWatch Logs - as seen - shows data of each event triggering the Lambda, and errors, outputs, console logs.
-- CloudWatch Metrics, e.g. invocations, duration, error count, error/success rate, throttles( going over limits), async deliver failures, concurrent executions.
+- CloudWatch Metrics, e.g. invocations, duration, error count, error/success rate, throttles( going over limits), async delivery failures, concurrent executions.
 - X-Ray tracing: Enable it as Configuration - Monitoring tools - AWS X-Ray: Active tracing, in the Lambda
   - AWS runs the X-Ray Daemon for you
-  - You code must using the AWS X-Ray SDK
+  - Your code must be using the AWS X-Ray SDK
   - Must have correct policy to write to X-Ray `AWSXRayDaemonWriteAccess`
   - Environment variables to communicate with X-Ray (can be in exam):
     - `_X_AMZN_TRACE_ID` - contains the tracing header
@@ -683,12 +682,15 @@ Lambda is deployed in an AWS managed VPC.
   - Max: 900 seconds (15 minutes)
 
 ## Execution Context
+
 Temporary runtime environment
+
 - E.g. setup DB Connections, HTTP Client, etc, long running tasks.
 - Next invocation can reuse a context as it hang around between executions, AWS don't guarantee how long, mins to hours.
 - Includes a /tmp directory, 10GB of disk.
 
 ### Pattern
+
 - Initialise DB function outside of the Lambda function handler code.
 - Use /tmp directory to share files for reuse - /tmp is ephemeral.
 - To encrypt /tmp, use KMS Data Keys, and handle encrypting/decrypting in Lambda function code, there is nothing built-in to Lambda for this.
@@ -727,53 +729,62 @@ def lambda_handler(event, context):
     }
 ```
 
-
 Use - for reuse between executions:
+
 - /tmp for any large files
 - context for long running processes, e.g. creating DB connection
+- In .NET, create the connection in the ctor and assigned to a private static class variable. This must be done outside of the Handler method.
 
 ## Lambda Layers
+
 - Custom runtimes: You can use Layers to run code in languages not natively supported by Lambda, like C++ or Rust.
 - Dependencies: Layers let you package external libraries separately from your function code. This avoids repackaging unchanged dependencies with every deployment.
-Note: Layers simplify deployment and reuse, but they don’t improve execution speed or reduce cold start time.
+  Note: Layers simplify deployment and reuse, but they don’t improve execution speed or reduce cold start time.
 
 ### Demo
+
 - In Lambda console, Layers menu, choose a layer:
 - AWS Layers - adds a library prepared by AWS already, e.g. Python Panda used in the demo.
 - Custom Layers
 - Specify ARN
 
 ## Lambda File System Mounting
+
 - Can mount an EFS if in the same VPC as the Lambda
-- Note: each Lambda creates a new connection to the Lambda so be aware of potentially hitting total connection limits on the EFS, or burst limits if lots of Lambdas spin up quickly.
+- Note: each Lambda creates a new connection to the EFS so be aware of potentially hitting total connection limits on the EFS, or burst limits if lots of Lambdas spin up quickly.
 
 ## Storage Options
+
 ## AWS Lambda Storage Options Comparison
 
-| Storage Type   | Max Size         | Persistence     | Access Speed     | Cost             | Use Case Examples                                      | Notes                                                                 |
-|----------------|------------------|------------------|------------------|------------------|--------------------------------------------------------|-----------------------------------------------------------------------|
-| `/tmp`         | 10 GB (default)  | Ephemeral        | Very fast (local)| Included         | Temporary file storage, caching, intermediate results  | Can request >10 GB via AWS support; cleared after each container ends |
-| Lambda Layers  | 250 MB per layer (max 5 layers) | Durable (read-only) | Fast (mounted)   | Included         | Shared libraries, custom runtimes, static assets       | Mounted at `/opt`; total combined size limit: 1.25 GB                 |
-| Amazon S3      | Virtually unlimited | Durable         | Fast (network)   | Additional cost  | Large file storage, input/output data, backups         | Requires SDK/API access; eventual consistency                         |
-| Amazon EFS     | Up to petabytes  | Durable          | Very fast (network file system) | Additional cost  | Shared file systems, ML models, persistent state       | Mounted at `/mnt/efs`; supports concurrent access across functions    |
+| Storage Type  | Max Size                        | Persistence         | Access Speed                    | Cost            | Use Case Examples                                     | Notes                                                                 |
+| ------------- | ------------------------------- | ------------------- | ------------------------------- | --------------- | ----------------------------------------------------- | --------------------------------------------------------------------- |
+| `/tmp`        | 10 GB (default)                 | Ephemeral           | Very fast (local)               | Included        | Temporary file storage, caching, intermediate results | Can request >10 GB via AWS support; cleared after each container ends |
+| Lambda Layers | 250 MB per layer (max 5 layers) | Durable (read-only) | Fast (mounted)                  | Included        | Shared libraries, custom runtimes, static assets      | Mounted at `/opt`; total combined size limit: 1.25 GB                 |
+| Amazon S3     | Virtually unlimited             | Durable             | Fast (network)                  | Additional cost | Large file storage, input/output data, backups        | Requires SDK/API access; eventual consistency                         |
+| Amazon EFS    | Up to petabytes                 | Durable             | Very fast (network file system) | Additional cost | Shared file systems, ML models, persistent state      | Mounted at `/mnt/efs`; supports concurrent access across functions    |
 
 ## Lambda Concurrency and Throttling
+
 - Max 1,000 concurrent functions - can request more from AWS with support ticket
 - Reserved concurrency: limit of concurrent invocations
   - Triggers a Throttling error when the limit is reached
   - Synchronous function errors
-  - Async function - retries after 1 sec, with exponential backup, up to max of 5 mins between retries.
+  - Async function - retries after 1 sec, with exponential backoff, up to max of 5 mins between retries.
 - 1,000 limit applies to ALL functions in the account, so another function reaching the limit will impact other functions trying to run.
 - A limit can be configured on the function itself.
 
 ## Cold starts
+
 New instance of a function takes time to start up, e.g. seconds.
 
 ## Provisioned Concurrency
+
 - Concurrency is allocated before function is invoked, so a cold start does not happen.
 - Application auto-scaling can manage concurrency (scheduled or target utilisation).
 
 ### Demo Config
+
 - Qualifier Types: Alias or Version
 - Provisioned Concurrency: this is the number of concurrency functions to have ready.
 
@@ -781,16 +792,17 @@ New instance of a function takes time to start up, e.g. seconds.
 
 ## Reserved vs Provisioned Concurrency in AWS Lambda
 
-| Feature                  | Reserved Concurrency                        | Provisioned Concurrency                     |
-|--------------------------|---------------------------------------------|---------------------------------------------|
-| Purpose                  | Limit and guarantee max concurrent executions | Pre-warm environments to avoid cold starts |
-| Cold Start Prevention    | ❌ No                                        | ✅ Yes                                      |
-| Guarantees Capacity      | ✅ Yes                                       | ✅ Yes                                      |
-| Acts as Throttle         | ✅ Yes                                       | ❌ No                                       |
-| Cost                     | No additional cost                          | Additional charges apply                    |
-| Use Case                 | Control concurrency, protect downstream services | Low-latency, predictable workloads       |
+| Feature               | Reserved Concurrency                             | Provisioned Concurrency                    |
+| --------------------- | ------------------------------------------------ | ------------------------------------------ |
+| Purpose               | Limit and guarantee max concurrent executions    | Pre-warm environments to avoid cold starts |
+| Cold Start Prevention | ❌ No                                            | ✅ Yes                                     |
+| Guarantees Capacity   | ✅ Yes                                           | ✅ Yes                                     |
+| Acts as Throttle      | ✅ Yes                                           | ❌ No                                      |
+| Cost                  | No additional cost                               | Additional charges apply                   |
+| Use Case              | Control concurrency, protect downstream services | Low-latency, predictable workloads         |
 
 ## Lambda Function Dependencies
+
 - Dependencies need to be packaged and zipped and uploaded to the Lambda
 - Example: Node.js node_modules is required to be uploaded
 - <= 50MB goes to Lambda
@@ -801,7 +813,9 @@ New instance of a function takes time to start up, e.g. seconds.
 ## Lambda and CloudFormation
 
 ### Inline
+
 For simple use cases without dependencies
+
 ```
 AWSTemplateFormatVersion: '2010-09-09'
 Description: Simple Lambda Function with Inline Code
@@ -826,6 +840,7 @@ Resources:
 ```
 
 ### CF in S3
+
 - Upload the zip to S3 (enable versioning in S3)
 - In CF template reference the S3 bucket
 
@@ -850,6 +865,7 @@ Resources:
 ```
 
 ## Lambda Container Images
+
 - Deploy image up to 10GB for ECR
 - The Base image must implement the **Lambda Runtime API**
   - Base images exist already for multiple languages
@@ -875,6 +891,7 @@ CMD ["/var/runtime/bootstrap"]
 ```
 
 ### Best Practice
+
 - Use multi-stage build, so final image is small/simple.
 - Use AWS provided built images
 - Build stages from most frequently changing to least (caching)
@@ -883,6 +900,7 @@ CMD ["/var/runtime/bootstrap"]
 ## Lambda Versions and Aliases
 
 ### Versions
+
 - $LATEST version for development
 - Create a version when ready to publish - UI Publish - set Versions
 - Immutable - cannot change assigned version for a function
@@ -890,6 +908,7 @@ CMD ["/var/runtime/bootstrap"]
 - Each version can be accessed and used
 
 ### Alias
+
 - Pointers to different Lambda **versions**
 - Mutable, can change which version is pointed to.
 - Cannot reference other Aliases
@@ -901,17 +920,21 @@ CMD ["/var/runtime/bootstrap"]
   - Split weighting of Alias to 2 different **versions** using a percentage.
 
 ## Lambda and CodeDeploy
+
 - CodeDeploy can automate traffic shift for **Aliases**
 - E.g. shifting the weighting for the target version in the Alias during a Canary deployment
 
 ### Strategies
+
 - **Linear**: grow traffic every N minutes until 100%
 - **Canary**: try X percentage, then after time, switch to 100%
 - **All At Once**: immediate 100%
 
 #### Rollback
+
 - Can create pre-post hooks to rollback on failure
 - Uses **AppSpec.yml**
+
 ```
 version: 0.0
 Resources:
@@ -925,6 +948,7 @@ Resources:
 ```
 
 ## Lambda Function URL
+
 - Expose a function without using other services, use a function URL.
 - Creates a fixed URL, any HTTP client can access it.
 - Only works with Public internet, never private.
@@ -933,6 +957,7 @@ Resources:
 - Throttle using the Reserved Concurrency.
 
 ### Function URL Security
+
 - Resource based policy
   - Authorised accounts
   - CIDR Ranges
@@ -941,25 +966,30 @@ Resources:
   - When domains are different, to allow browser to use the Lambda response.
 
 ### AuthType: None
+
 - Allows Public unauthorised access
 - Uses Resource based policy granting public access
 
 ### AuthType: IAM
+
 - IAM is used to authorise and authenticate requests
 - Both principals Identity based policy & resource based policy are evaluated
 - Same account: IBP OR RBP as Allow
 - Cross account: IBP AND RBP as Allow
 
 ## CodeGuru
+
 - Provides insights into your functions
 - Creates a Profile group in the Lambda functions, needs permission to do it `AmazonCodeGuruProfilerAgentAccess`.
 - Supports runtimes: Java, Python.
 - Activated from within the AWS Console.
 
 ## Lambda Limits - Review
+
 - Per region, per account
 
 ### Execution Limits
+
 - Memory 128MB to 10GB (increases in 1MB increments).
 - Max time: 900 seconds (15 minutes)
 - Environment Variables: Max 4KB total for all vars.
@@ -967,6 +997,7 @@ Resources:
 - Concurrency: 1000 max
 
 ### Deployment Limits
+
 - Lambda function deployment size
   - Compressed zip: 50MB max
   - On un-compress: 250MB max
