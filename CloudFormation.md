@@ -49,7 +49,6 @@ These the Components:
   - Existing template
   - Build from Application Composer
 - Select 'Sample template' - displays the Application composer UI
-
   - will show a diagram of resources that will be made
   - shows the code (YAML or JSON)
   - the demo uses a sample app from github
@@ -113,7 +112,7 @@ Outputs:
 
 ## YAML
 
-Exmaple of YAML and it's structure
+Example of YAML and it's structure
 
 ```
 name: "Joe Blogs"                  # key-value pair
@@ -258,7 +257,6 @@ Outputs:
 ## Pseudo Parameters
 
 - These are predefined built-in parameters in AWS about the Stack that you can be referenced in the template.
-
   - Common pseudo parameters
 
   | Pseudo Parameter | Description                                                      |
@@ -453,7 +451,6 @@ If your CF stack doesn't have permission you will get an **InsuffientCapabilitie
 Control what happens to a resource if you delete the stack or update the stack with a template that removes a resource.
 
 - Declare in the template YAMl, on the resource object:
-
   - These work for all AWS resources:
     - Default is: DeletionPolicy=Delete
     - Keep: DeletePolicy=Keep

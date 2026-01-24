@@ -1,13 +1,12 @@
-# Elastic Beastalk
+# Elastic Beanstalk
 
 A way of deploying infrastructure. Most apps have similar architecture, Elastic Beanstalk is a service to create similar architecture that is configurable.
 
 ## Components
 
-- Application (enviroments, versions, configurations)
+- Application (environments, versions, configurations)
 - Application Version: application code iteration version
 - Environment - the AWS resources running the application
-
   - Tiers:
     - Web server: pattern for a web architecture: ELB, AZs, SGs, EC2 instance web servers
     - Worker: pattern for an application with no web client, uses SQS Queue, AZs, SGs, EC2 instances worker server processing from/to the queue.
@@ -18,7 +17,7 @@ A way of deploying infrastructure. Most apps have similar architecture, Elastic 
   - Single instance (for dev)
     - Elastic IP, EC2 Instance, RDS
   - High availability with Load balancer
-    - ALB, AZs, Mutliple EC2 Instances, RDS
+    - ALB, AZs, Multiple EC2 Instances, RDS
 - Frameworks supported: many, .NET, Go, Node, Docker, etc.
 
 ## Demo 1 - Single Instance
@@ -43,23 +42,21 @@ In the Elastic Beanstalk AWS Console
   - Create a new service role OR Use an existing service role
   - Add EC2 Instance Profile
     - You need to create this EC2 Instance Profile in the IAM Console
-      - Add atleast these policies:
+      - Add at least these policies:
         - `AwsElasticBeanStalkWebTier`
         - `AwsElasticBeanStalkWorkerTier`
         - `AwsElasticBeanStalkMulticontainerDocker`
-- This crerates the Elastic Beanstalk environment using CloudFormation (CF), in CF you can see the Events of the various components being created, e.g. Security Group, Single EC2 Instance, Public IP, Auto-scaling Group, etc.
+- This creates the Elastic Beanstalk environment using CloudFormation (CF), in CF you can see the Events of the various components being created, e.g. Security Group, Single EC2 Instance, Public IP, Auto-scaling Group, etc.
 - Configure Options:
   - Upload new version
   - Monitoring
   - Configuration - Modify/Apply
 - Applications
-
   - Within this Elastic Beanstalk instance, more environments can be added (e.g. test, prod, etc), you can deploy to these various environments in the single Elastic Beanstalk instance simultaneously.
 
   ## Demo 2 - Multi-instance
 
   Multi-instance is suitable for Prod environments as it creates multiple EC2 Instances. The following is similar to Demo 1, but:
-
   - Presets: **High Availability**
   - Networking
     - VPC
@@ -124,7 +121,7 @@ This concerns how updates to the application are rolled out. Note: you will pay 
 
 - Not pure blue/green deployment, but a way to achieve similar.
 - Clone an Elastic Beanstalk environment in the EB instance - this creates all components, e.g, Load balancer, environment variables, instances.
-- Note: after cloning you can change conifguration, but **you cannot change the Load Balancer type**.
+- Note: after cloning you can change configuration, but **you cannot change the Load Balancer type**.
 - Deploy the new app version to the cloned environment.
 - Test the cloned application
 - Swap environment domains, e.g. modify DNS entries, Route 53 can be used to weight traffic to blue or green.

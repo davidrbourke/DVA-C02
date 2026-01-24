@@ -90,7 +90,7 @@ Docker container launched on ECS - EC2 Launch Type:
 
 4. In this demo, both AWS Fargate and EC2 Instances are selected.
 
-- When creating the ECS, all the required innfrastructure is created for the EC2 and Fargate providers.
+- When creating the ECS, all the required infrastructure is created for the EC2 and Fargate providers.
 - In the ECS > Infrastructure tab, there will be multiple capacity providers for the ECS where ECS Services can be deployed:
   - FARGATE (Fargate Provider) - Standard On-demand pricing
   - FARGATE_SPOT (Fargate Provider) - Discounted spare capacity
@@ -183,7 +183,7 @@ Fargate does this automatically if using the Fargate launch type, for **EC2 Laun
 When you want to update the version of your Tasks, e.g. updated image, you can do rolling updates. Containers must be destroyed and new ones created. You specify:
 
 1. Minimum healthy percent: this defines how many tasks should be running at minimum, e.g. 10 tasks, 50%, 5 tasks could be destroyed at once, as long as 5 are remaining.
-2. Maximum percent: this defines how many tasks can be running concurrently, so how many new ones can be created when old ones are deleting. e.g. 200% with 10 tasks means all new tasks could spin up while old ones are deleting, you could temporarily be runing 20 tasks.
+2. Maximum percent: this defines how many tasks can be running concurrently, so how many new ones can be created when old ones are deleting. e.g. 200% with 10 tasks means all new tasks could spin up while old ones are deleting, you could temporarily be running 20 tasks.
 
 100% Minimum healthy percent and 200% Maximum percent would ensure zero downtime. New tasks would be created before any were deleted.
 
@@ -223,7 +223,7 @@ When you want to update the version of your Tasks, e.g. updated image, you can d
   - Port binding for container and host, e.g. container running Apache on port 80, host port 8080 can map to 80. Via the internet you would use Port 8080.
   - Memory and CPU
     - You can configure limits per container on how much of the Task Cpu and memory it can use.
-  - Environment varibles
+  - Environment variables
   - Networking
   - IAM Role
   - Logging configuration

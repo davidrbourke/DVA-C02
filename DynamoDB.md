@@ -30,7 +30,7 @@
 
 (Exam will test on this)
 
-Option 1: Partition Key (Has)
+Option 1: Partition Key (Hash)
 
 - Must be unique for each item
 - Diverse – so data is distributed
@@ -152,7 +152,7 @@ Can switch between modes every 24 hours.
 |           |                    | Can query a table, local secondary index, or global secondary index                                          |
 |           | Scan               | Export entire table, returns up to 1MB of data, use Limit to reduce RCUs, Use parallel scan for performance. |
 |           |                    | Can use with filter and project expressions                                                                  |
-|           | Returns            | Limit of items to return, or up to 1 MB, use pagination to exceed.                                           |
+|           |                    | Limit of items to return, or up to 1 MB, use pagination to exceed.                                           |
 | Delete    | DeleteItem         | Delete single item, can be conditional                                                                       |
 |           | DeleteTable        | Delete whole table and all items, quicker than calling DeleteItem on all items.                              |
 | Batch     |                    | Can save latency by batching items, operations are parallel to speed up, need to retry for failed items      |
@@ -301,7 +301,7 @@ Files
 
 ## DynamoDB Streams
 
-- Ordered steam of item-level modifications, e.g. every CRUD operation.
+- Ordered stream of item-level modifications, e.g. every CRUD operation.
 - Can be sent to:
   - Kinesis data streams (receiver)
   - Lambda function (can pull)
@@ -322,7 +322,7 @@ Files
   - OLD_IMAGE - entire item before modification
   - NEW_AND_OLD_IMAGES - both of above
 - Streams are made of Shards, AWS provisions them automatically
-- Records are not retroactively once stream enabled, only new updates.
+- Records are not retroactive once stream enabled, only new updates.
 
 ### Demo
 
@@ -376,7 +376,6 @@ aws dynamodb scan --table-name UserPosts --max-items 1 --starting-token ey......
 - Write Modes - standard, **transactional**
 - Consumes 2x WCUs & RCUs, as DB performs 2 operations for transactional ops.
 - Two operations:
-
   - TransactGetItem - one or more GetItem
   - TransactionWriteItem - one or more PutItem, UpdateItem, DeleteItem
 
@@ -445,12 +444,10 @@ Due to 400KB item size limit, use an S3 for large objects, and store the pointer
 ## Other features
 
 - Backup and restore
-
   - Point in time recovery (PITR)
   - No performance impact (?)
 
 - Global Tables
-
   - Multi-region, fully replicated, high performance - needs to be enabled
 
 - DynamoDB Local
@@ -465,7 +462,6 @@ Due to 400KB item size limit, use an S3 for large objects, and store the pointer
   - OpenID Connect
   - SAML
 - Users log in with the ID provider, get temporary AWS credentials, credentials used to obtain IAM role - this role should only allow access to required tables.
-
   - IAM Role has Conditions
 
   ```

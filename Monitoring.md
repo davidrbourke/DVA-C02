@@ -98,9 +98,9 @@ aws cloudwatch put-metric-data --metric-name Buffers --namespace MyNameSpace --u
 ### CloudWatch Logs Insights
 
 - A tool to query logs in CloudWatch - historical logs, not a real-time tool
-- Query language - lots of example queries availble
+- Query language - lots of example queries available
   - Filter, sorting, limiting
-- Visualises logs ouputs/trends in graphs
+- Visualises logs outputs/trends in graphs
 - Can query multiple logs
 
 ### S3 Export
@@ -125,7 +125,7 @@ aws cloudwatch put-metric-data --metric-name Buffers --namespace MyNameSpace --u
     - Has CloudWatch log groups with subscription filters.
     - Each filter references a CloudWatch Logs destination ARN in the receiver account.
   - **Receiver Account:**
-    - Hosts the CloudWatch Logs destination, which points to the Kinesis Data Stream.
+    - Hosts the **CloudWatch Logs Destination** resource, which points to the Kinesis Data Stream.
     - The destination has a resource policy (not an IAM role) that:
       - Grants logs:`PutSubscriptionFilter` to the sender account(s).
       - Allows the sender to attach subscription filters to the destination.
@@ -157,7 +157,7 @@ aws cloudwatch put-metric-data --metric-name Buffers --namespace MyNameSpace --u
     - Can send both metrics and logs
     - Centralised configuration using SSM Parameter store - so all your Agents share the same configuration.
 
-#### CloudWatch Unified Agent - Metics
+#### CloudWatch Unified Agent - Metrics
 
 Unified Agent metrics allow getting more detailed metrics than normal EC2 monitoring, can get more info about these specific metrics:
 
@@ -176,7 +176,7 @@ Unified Agent metrics allow getting more detailed metrics than normal EC2 monito
   - E.g. 5 instances of an error in an hour, raise alarm
   - Select the created metric filter
   - Select threshold condition and value, e.g. >= 50
-    - (Another option is Anonmaly detection)
+    - (Another option is Anomaly detection)
   - Set Alarm state trigger and notification target, e.g. SNS topic.
 - When create the metric, you can test the filter to see the results work
   - There is a query syntax: https://docs.aws.amazon.com/AmazonCloudWatch/latest/logs/FilterAndPatternSyntax.html
@@ -184,7 +184,7 @@ Unified Agent metrics allow getting more detailed metrics than normal EC2 monito
 
 ### CloudWatch Alarms
 
-- Alarm states: OK, INFUFFICIENT_DATA, ALARM
+- Alarm states: OK, INSUFFICIENT_DATA, ALARM
 - Period: how long to evaluate the metric for, e.g. 10, 30 or 60 second intervals
 - Targets:
   - Actions on EC2 Instance, e.g. stop, terminate, reboot, recover
@@ -247,14 +247,14 @@ Status check on EC2 is on: EC2 Instance, System (underlying hardware), or EBS st
 
 - Events are passed as JSON documents. There are schema for JSON documents for all the AWS service's various events, so you can see what data is coming in each event.
 - For your own application events, the Schema Registry will generate code/class bindings to generate events in the correct structure.
-- Schema Registery discovery can detect the structure of events as they pass through and add them to the Schema Discovery Registry so you don't have to do it manually.
+- Schema Registry discovery can detect the structure of events as they pass through and add them to the Schema Discovery Registry so you don't have to do it manually.
 - Schemas can be versioned.
 
 #### Amazon EventBridge - Resource-based policies
 
 - Manage permissions for a specific event bus, e.g. to allow/deny events from other accounts or regions.
 - This would be used when combining events into a central event bus. Example scenario:
-  - You have mutliple EC2 instances in differnet accounts
+  - You have multiple EC2 instances in different accounts
   - Define an event pattern (JSON) in one account to send to an Event Rule in the source account using the central account API, e.g `PutEvents` API.
   - In the central account Event Bus create a Resource Policy to allow the EC2 instances to access it.
   - Setup the same event rule in the source accounts
@@ -267,7 +267,7 @@ Status check on EC2 is on: EC2 Instance, System (underlying hardware), or EBS st
 - Can visualise dependencies
 - Understand how each request is behaving
 - Finding errors in exceptions
-- Can see which services are throlling performance
+- Can see which services are throttling performance
 - Can see which users are impacts
 - Services supported: AWS Lambda, Elastic Beanstalk, ECS, ELB, API Gateway, EC2 Instances, even on-prem application servers.
 - X-Ray is found in the CloudWatch Console in AWS.
@@ -299,7 +299,7 @@ Status check on EC2 is on: EC2 Instance, System (underlying hardware), or EBS st
 
 ### Instrumentation in your code
 
-- Measure performance, diagnosr errors, write trace information.
+- Measure performance, diagnose errors, write trace information.
 - To instrument your code you use the X-Ray SDK
 - Customize and annotate the data the SDK sends to X-Ray
 - Using filters, handlers, middleware.
@@ -316,9 +316,9 @@ Status check on EC2 is on: EC2 Instance, System (underlying hardware), or EBS st
 ### Concepts
 
 - Segments: a unit of trace data, e.g. a single request
-- Subsegments: nested sub-data within a segement
+- Subsegments: nested sub-data within a segment
 - Trace: collection of segments to form end-to-end trace
-- Sampling: descrease the amount of requests sent to X-Ray to reduce cost
+- Sampling: decrease the amount of requests sent to X-Ray to reduce cost
   - Default:
     - **Reservoir:** every first request each second
     - **Rate:** + 5% of any additional requests
@@ -337,13 +337,13 @@ Daemon needs correct API Policies to operate:
 
 - PutTraceSegments: write to X-Ray
 - PutTelemetryRecords: write metrics to X-Ray
-- GetSamplingRules: daemon can retreive the sampling rules from X-Ray
+- GetSamplingRules: daemon can retrieve the sampling rules from X-Ray
 - GetSamplingTargets: related to getting sampling rules
-- GetSampingStatisticsSummaries: related to getting sampling rules
+- GetSamplingStatisticsSummaries: related to getting sampling rules
 - GetServiceGraph: get main graph in console
-- BatchGetTraces: retreive list of traces by ID.
-- GetTraceSummaries: retreive IDs and annotations for traces available using a filter, or trace IDs
-- GetTraceGraph: retreive a service graph for specified trace ID(s).
+- BatchGetTraces: retrieve list of traces by ID.
+- GetTraceSummaries: retrieve IDs and annotations for traces available using a filter, or trace IDs
+- GetTraceGraph: retrieve a service graph for specified trace ID(s).
 
 Example policy:
 
@@ -381,8 +381,7 @@ Example policy:
 Options:
 
 1. Run one X-Ray Daemon on each EC2 instance in the cluster.
-2. Side-car pattern: run one daemon intance per container as side-car.
-
+2. Side-car pattern: run one daemon instance per container as side-car.
    1. side-car **port mapping is containerPort 2000, protocol is udp**
    2. app container needs env var: **AWS_XRAY_DAEMON_ADDRESS: xray-daemon:2000**
    3. link containers using links: **links: xray-daemon**
