@@ -167,10 +167,10 @@ If a consumer keeps processing a message and it fails and keeps going back into 
 
 1. You create a new Queue for the DLQ.
 2. In your source Queue config, you can set the DLQ created as the target for the DQL and set the `Maximum Receives` value.
-3. In AWS Console, in DLQ, there is an option **Start DQL Redrive**
+3. In AWS Console, in DLQ, there is an option **Start DLQ Redrive**
    - You have to select the source queue to push the messages back to.
 
-#### DQL - Redrive to Source
+#### DLQ - Redrive to Source
 
 After debugging, you may need to update your application code to handle messages in the DLQ. You can use **redrive to source** to push your DLQ messages back into the SQS Queue to reprocess them after deploying application code updates.
 
@@ -222,7 +222,6 @@ Must know for exam:
   - `SendMessage`
     - `DelaySeconds` - wait before message becomes visible
 - Consumer:
-
   - `ReceiveMessage`
   - `DeleteMessage`
   - `MaxNumberOfMessages`: default 1, max 10 - for Consumer to get in one request
@@ -407,7 +406,6 @@ Collect and store streaming **real-time** data. Any time real-time is mention in
 ### Capacity Modes
 
 - Provisioned mode:
-
   - Choose number of shards (related to size of stream)
   - 1 MB/s or 1,000 records p/s per shard
   - 2 MB/s out traffic per shard
@@ -433,7 +431,6 @@ Collect and store streaming **real-time** data. Any time real-time is mention in
     - Select no. of shards - can use shard estimator tool
 - Create - once created:
 - Applications menu:
-
   - Producers:
     - Amazon Kinesis Agent - uses a standalone Java application on application servers to send data to the stream
     - AWS SDK - use Java to develop producers at low level - can use other languages, e.g. .NET, doesn't have all the functionality of KPL.
@@ -448,7 +445,6 @@ Collect and store streaming **real-time** data. Any time real-time is mention in
   - **Enhanced fan-out** - consumers can use the enhanced fan out facility. Using standard fan-out, all consumers share the 2 MB p/s output limit. Using **enhanced fan-out**, each consumer gets a dedicated 2 MB p/s out limit, so it is faster, but more expensive.
 
 - Use Terminal or CLI in AWS Console CloudShell
-
   - `aws --version` Use version 2
   - Write to stream using `put-record`:
   - V1:
@@ -495,7 +491,6 @@ Collect and store streaming **real-time** data. Any time real-time is mention in
   ```
 
   - Other --shard-iterator-type options:
-
     - `TRIM_HORIZON`: start from the oldest record
     - `LATEST`: start from the newest record
     - `AT_TIMESTAMP`: start from a specific timestamp
@@ -584,7 +579,6 @@ A service to send data from sources into target destinations.
 - Transform: can setup using lambda functions
 - Convert record format into Parquet or ORC
 - Destination settings:
-
   - S3 bucket - created or create one
   - Dynamic partitioning
   - S3 bucket prefix (optional) - default is a data format - can be overridden

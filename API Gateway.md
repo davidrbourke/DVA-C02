@@ -11,7 +11,7 @@ Expose and HTTP endpoints, e.g.
 
 - On Prem HTTP API
 - ALB
-- Expose and AWS API/Service through the Gateway
+- Expose AWS API/Service through the Gateway
 
 - Example: Need public clients to send data to Kinesis Data Streams. Use the API Gateway:
   Clients -> API Gateway -> Kinesis Data Streams
@@ -30,7 +30,7 @@ Expose and HTTP endpoints, e.g.
 - User authentication through:
   - IAM Roles (for internal applications)
   - Cognito for external users (e.g. mobile users)
-  - Custom Authorizer (implement your onw Auth logic)
+  - Custom Authorizer (implement your own Auth logic)
 - HTTPS Security with your own Custom Domain Name with integration through AWS certificate manager.
   - If using **Edge-Optimized** endpoint, then certificate must be in **us-east-1**.
   - If using **Regional endpoint**, the certificate must be in the API Gateway region
@@ -106,7 +106,7 @@ Expose and HTTP endpoints, e.g.
   - HTTP Endpoint
   - Parameter mapping templates
 - Uses:
-  - Configure HTTP endpoints automatically, e.g. de/test/v1, etc
+  - Configure HTTP endpoints automatically, e.g. dev/test/v1, etc
   - Pass config parameters to AWS Lambda through mapping templates
 - Stage variables are passed to the "context" object in AWS Lambda
 - To access variable: `${stageVariables.variableName}`
@@ -144,7 +144,6 @@ When running each stage, the correct parameter will be passed into the Lambda ve
 - Setup in integration request and response
   - Can change the request and response between API and the backend
 - Mapping Templates
-
   - Modify body, headers, query strings
   - Uses Velocity Template Language (VTL)
   - Content-Type must be application/json, or application/xml
@@ -165,7 +164,7 @@ When running each stage, the correct parameter will be passed into the Lambda ve
 
 ### AWS_PROXY
 
-- A proxy from request to Lambda, cannot use ant mapping or change any request/response. Request is forwarded as it is.
+- A proxy from request to Lambda, cannot use any mapping or change any request/response. Request is forwarded as it is.
 - Backend function must be able to understand the request.
 
 ### HTTP_PROXY
@@ -274,7 +273,7 @@ To make API available and control access to different clients, setup a Usage Pla
 ## Logging and Tracing
 
 - CloudWatch logs
-  - Request/request body logged
+  - Request/response body logged
   - Enable at Stage level with log level (e.g. debug, error, info)
   - Can override on API basis
   - Be careful with sensitive information
@@ -283,12 +282,11 @@ To make API available and control access to different clients, setup a Usage Pla
 - CloudWatch Metrics can be enabled:
   - CacheHitCount
   - CacheMissCount
-  - Count: no. of API request per time period
+  - Count: no. of API requests per time period
   - IntegrationLatency: how long backend takes from request to response from backend.
-  - Latency: time API GW receives request till time is sends the response, includes anything the Gateway is doing on the request.
+  - Latency: time API GW receives request till time it sends the response, includes anything the Gateway is doing on the request.
 - Any request over 29 seconds will result in API Gateway timeout
 - Error metrics:
-
   - 4xx client side errors
     - 403 Bad request
     - 403 access denied
@@ -323,7 +321,7 @@ To make API available and control access to different clients, setup a Usage Pla
   - Leverages Signature V4 capability where IAM credentials are in headers
   - Flow:
     - Client requests to gateway with with Sig v4
-    - API gateway checks again IAM policy
+    - API gateway checks against IAM policy
     - If successful auth, request continues to Backend
 - Resource Policies
   - Allow a JSON policy to be set on Gateway to define who and what they can do.
@@ -364,7 +362,7 @@ To make API available and control access to different clients, setup a Usage Pla
 
 ## API Gateway WebSocket API
 
-- A two way interaction communication between user client browse and server
+- A two way interaction communication between user client browser and server
 - Server can push back the client
 - For stateful application use cases (persistent connection)
 - Example: a chat application, other **real-time** type applications.
@@ -388,7 +386,7 @@ To make API available and control access to different clients, setup a Usage Pla
   - This is to send requests to different backends
   - Route is $default if not specified
   - Setup a route selection expression on incoming data, e.g. a field in the request JSON body: `$request.body.action` if field called action.
-  - Setup route keys in you Gateway to route to specific backends based on the value of the field.
+  - Setup route keys in your Gateway to route to specific backends based on the value of the field.
 
 ## Example Microservice Architecture
 

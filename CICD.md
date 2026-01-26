@@ -62,7 +62,7 @@ Expect a lot of questions – need to do some practical on this.
 
 - Build instructions in buildspec.yml in the root of source code directory (can configure a different name or sub-directory).
 - Monitoring: CloudWatch metrics, EventBridge, CloudWatch, etc, to monitor the build.
-- Build runs on a container running a docker image, AWS provide a serious of docker images for various programming language/frameworks, the config in the buildspec.yml is used by the running container. Can extend an AWS base image for unsupported languages.
+- Build runs on a container running a docker image, AWS provide a series of docker images for various programming language/frameworks, the config in the buildspec.yml is used by the running container. Can extend an AWS base image for unsupported languages.
 - Feature to cache build files in S3 (optional) for faster build performance.
 - Output build artefacts to an S3 bucket.
 
@@ -120,8 +120,8 @@ artifacts:
 - Build spec: use a buildspec file vs insert build commands (choose buildspec file option), it is here that you can override the buildspec file name or directory if not at root.
 - Artefacts: options to send items to S3
 - Start a build – if there is a found buildspec.yml file in the source code.
-- Add a test stop to CodePipeline
-- Once you have tested on build, remove the option from CodeBuild for ‘rebuild ever time a change is pushed’. This stops code changes triggering the build at the code build level – it will be moved to the Code pipeline instead.
+- Add a test stage to CodePipeline
+- Once you have tested on build, remove the option from CodeBuild for ‘rebuild every time a change is pushed’. This stops code changes triggering the build at the code build level – it will be moved to the Code pipeline instead.
 - Go to CodePipeline – edit pipeline
 - Add a stage: TestCode
 - Action Provider: CodeBuild
