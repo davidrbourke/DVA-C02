@@ -11,10 +11,9 @@
 SAM is made of recipes.
 
 - Transform Header (at top of template) - to indicate it is a SAM template, e.g.
-
   - `Transform: AWS::Serverless-2016-10-31`
 
-- Write code, use SAM constructs inteads of CloudFormation constructs, e.g.
+- Write code, use SAM constructs instead of CloudFormation constructs, e.g.
   - `AWS::Serverless::Function`, etc.
 - Package and deploy:
   - sam package (optional)
@@ -168,7 +167,7 @@ Policies:
 
 Example:
 
-- `AutoPublishAlias: live`: this allow SAM to auto-route the Lambda traffic to the new version when a `sam deploy` happens.
+- `AutoPublishAlias: live`: this allows SAM to auto-route the Lambda traffic to the new version when a `sam deploy` happens.
 - `Canary10Percent5Minutes`: it does a CodeDeploy Canary deployment option to route traffic. (Linear, Canary, AllAtOnce options, same as CodeDeploy).
 - See DeploymentPreference block in example:
 

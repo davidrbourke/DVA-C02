@@ -1,13 +1,11 @@
 # AWS Security
 
 - Encryption in flight
-
   - TLS (newer), SSL, encryption before sending, decryption after receiving.
   - Ensure no man-in-the-middle attack
   - Uses certificates
 
 - Encryption at rest
-
   - stored encrypted on the server
   - encrypted using data keys
   - server must have access to the keys
@@ -145,7 +143,7 @@ aws kms decrypt \
 #### To Encrypt with Envelope Encryption
 
 1. Request to `GenerateDataKey` API check IAM Policy, returns a plaintext Data Encryption Key (DEK)
-2. Locally use plantext DEK to encrypt the file
+2. Locally use plaintext DEK to encrypt the file
 3. New **envelope** file is a file wrapper around the encrypted file + encrypted DEK
 
 #### To Decrypt with Envelope Encryption

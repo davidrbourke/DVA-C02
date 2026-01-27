@@ -7,7 +7,7 @@
 ## CDK vs SAM
 
 - SAM is serverless focused YAML, e.g. Lambda, also uses CloudFormation in background.
-- CDK support every AWS service, in a programming language.
+- CDK supports every AWS service, in a programming language.
 
 ## CDK & SAM together
 
@@ -33,8 +33,8 @@
 
 - Detects labels and images using Rekognition and writes target data into DynamoDB
 
-6. Run `cdk bootstrap` - this sets up in your account for CDK to be able to deploy, it actually using CloudFormation to create the CDK infra, only needs to be run once per region per account.
-7. `cdk synth` - this create the CloudFormation template for the infra. You can preview it.
+6. Run `cdk bootstrap` - this sets up in your account for CDK to be able to deploy, it's actually using CloudFormation to create the CDK infra, only needs to be run once per region per account.
+7. `cdk synth` - this creates the CloudFormation template for the infra. You can preview it.
 8. `cdk deploy` to generate the template and deploy it into AWS.
 
 Javascript example
@@ -272,8 +272,8 @@ module.exports = { LambdaRestApi };
 
 ## CDK Bootstrapping
 
-- The process of provisioning resources for CDK before you can using CDK to deploy an app.
-- AWS Environments - region and & account - only needs to be done one.
+- The process of provisioning resources for CDK before you can use CDK to deploy an app.
+- AWS Environments - region and & account - only needs to be done once.
 - Contains an S3 bucket and an IAM role - required.
 - `cdk bootstrap aws://{account}/{region}`
 - If you try to redeploy the bootstrap, it will just work, but any other errors will show an error.

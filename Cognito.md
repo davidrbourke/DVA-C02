@@ -42,7 +42,6 @@ A way for **external** to AWS users to have an identity.
 - Return URL - where users go after successful signin
 - Create
 - In Created user pool, configure:
-
   - App clients - the app setup for CUP
   - Users
   - Groups to group users
@@ -67,7 +66,6 @@ A way for **external** to AWS users to have an identity.
     - Threat protection
     - Log streaming (for suspicious requests)
   - Branding
-
     - Domain - can override automatically created domain with your custom domain.
     - Custom Domain
       - If using a custom domain, **you must create an ACM certificate in us-east-1 - no other region option**.
@@ -107,7 +105,7 @@ A way for **external** to AWS users to have an identity.
 ### Adaptive Authentication
 
 - Block sign-ins for suspicious logins, Cognito provides a risk score on each sign-in. You can require prompting for second MFA only when there is a risk. Example, a login from a new location/IP.
-- Phone and email authentication can be u8sed for any account takeover recovery.
+- Phone and email authentication can be used for any account takeover recovery.
 - All activity is logged to CloudWatch.
 
 ### CUP JWT
@@ -240,7 +238,7 @@ Example of a IAM policy where users can only access a bucket matching their `sub
   - Can setup Attribute mapping here
     - Attributes that can be used in the IAM Role
 - Create Identity Pool - gets created
-- Next need to setup you app now to use the Amazon Cognito Identity pool
+- Next, setup your app to use the Amazon Cognito Identity pool
 
 ## CUP vs CIP
 
