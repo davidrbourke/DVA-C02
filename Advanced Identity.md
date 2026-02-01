@@ -9,7 +9,7 @@
     - Returns credentials for user logged in with IdP, e.g. google, Facebook, OIDC.
     - AWS recommended using Cognito User Pools instead
   - `GetSessionToken`: for MFA, from a user or AWS account root user.
-  - `GetFederationToken`: obtain temporary credentials for federate user.
+  - `GetFederationToken`: obtain temporary credentials for federated user.
   - `DecodeAuthorizationMessage`: decode error message when AWS API access denied.
 
 ## AssumeRole
@@ -29,11 +29,11 @@ This is where the IAM Policy requires the user to authenticate with MFA before r
   - AccessID
   - SecretKey
   - SessionToken
-  - ExpirateDate
+  - ExpirationDate
 
 ### Example STS with MFA Policy
 
-This is a **trust policy**. A Trust policy is assigned to an IAM role, and it include the action sts:AssumeRole. It defines who is allow to assume the role. The User also needs permission on the own role to use sts:AssumeRole.
+This is a **trust policy**. A Trust policy is assigned to an IAM role, and it include the action sts:AssumeRole. It defines who is allow to assume the role. The User also needs permission on their own role to use sts:AssumeRole.
 
 ```
 {
@@ -65,8 +65,8 @@ Flow:
 
 1. User requests access
 2. Evaluate all policies
-   2a. Is there a DENY policy? Yes - DENY access (final), No - continue to next policies
-   2b. Is there an ALLOW policy? Yes - Allow access (final), No - Deny access (final)
+   1. Is there a DENY policy? Yes - DENY access (final), No - continue to next policies
+   2. Is there an ALLOW policy? Yes - Allow access (final), No - Deny access (final)
 
 DENY policies are evaluated before any ALLOW policies, so a DENY policy will prevent continuing the evaluation and return DENY.
 

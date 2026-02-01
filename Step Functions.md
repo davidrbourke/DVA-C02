@@ -1,6 +1,6 @@
 # AWS Step Functions
 
-- Step functions are a state machine for workflow. You model the workflow in JSON. Eash step in the working uses a state machine.
+- Step functions are a state machine for workflow. You model the workflow in JSON. Each step in the workflow uses a state machine.
 - Can visualise in a diagram in AWS
 - Flow is made up of Tasks (Task State).
 
@@ -76,7 +76,7 @@ Lambda -> Choice state -> Pass state
 of Lambda)
 
 - Use Node JS runtime, Lambda function returns string
-- State machine needs permission to execute Lambda - this person is automatically created when Step Function is created.
+- State machine needs permission to execute Lambda - this permission is automatically created when Step Function is created.
 - Events for the state function are logged in AWS.
 
 ## Error handling in Step functions
@@ -145,10 +145,11 @@ Example: https://github.com/hovmikayelyan/AWS-developer/blob/main/Marek%20Course
 
 - **Activity Workers** perform tasks from the step functions
 - They run on your service, e.g. EC2
-- they poll the step function for work
-- When complete, they call the `SendTaskAccess` (or Failure) API
+- The Step function reaches a point where it reaches an Activity Task, it waits.
+- The Activity Worker polls the step function using the activity ARN to see if it has any tasks waiting.
+- When complete, the service calls the `SendTaskSuccess` (or Failure) API
+- The Step Function continues on its Flow
 - Different from 'wait' state, as a **wait** pushes out, where as an **Activity Task** pulls from the step function.
-- When a step function gets to an Activity task, it pauses, the polling service calls the Step Function activity ARN to see if it has any tasks waiting.
 - Services calls the `GetActivityTask` API to get tasks.
 
 ### Parameters - Activity Task
@@ -176,7 +177,7 @@ Example: https://github.com/hovmikayelyan/AWS-developer/blob/main/Marek%20Course
 ### Synchronous - At-most once
 
 - You need to wait for a response
-- On failure, working will not automatically retry, you need to handle it.
+- On failure, work will not automatically retry, you need to handle it.
 
 # AWS AppSync
 

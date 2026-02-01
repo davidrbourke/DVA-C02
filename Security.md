@@ -117,9 +117,9 @@ aws kms encrypt \
     --output text | base64 --decode > encrypted_data.bin
 ```
 
---key-id is KMS key to use
---query is the part of the JSON response to return, CiphertextBlob or Plantext
---output text returns the result as a simple string instead of part of a json object
+- --key-id is KMS key to use
+- --query is the part of the JSON response to return, CiphertextBlob or Plaintext
+- --output text returns the result as a simple string instead of part of a json object
 
 #### Decrypt
 
@@ -138,7 +138,7 @@ aws kms decrypt \
 ### Envelope Encryption
 
 - For secrets > 4KB
-- Must use the `GenerateDatKey` API
+- Must use the `GenerateDataKey` API
 
 #### To Encrypt with Envelope Encryption
 
@@ -149,7 +149,7 @@ aws kms decrypt \
 #### To Decrypt with Envelope Encryption
 
 1. Call `Decrypt` API, pass encrypted DEK, checks IAM, returns plaintext DEK
-2. Use plaintext DEK to decrupt the file locally
+2. Use plaintext DEK to decrypt the file locally
 
 #### Encryption SDK
 
@@ -414,7 +414,7 @@ aws ssm get-parameter --name "MyKey" --with-decryption --query "Parameter.Value"
 
 ### Demo
 
-- If using RDS DB Secret; username and password is required when entered, can also chose the RDS DB and it will set the secret as the DB credentials.
+- If using RDS DB Secret; username and password is required when entered, can also choose the RDS DB and it will set the secret as the DB credentials.
 - Other type is key-value pair
 - Choose encryption key - default or pre-created in KMS
 - Configure rotation - automated or disabled, up to 1 year rotation.
@@ -471,7 +471,7 @@ Resources:
 - Must set property `ManageMasterUserPassword: true` for the RDS YAML
 - CF RDS creates password and sends it to Secrets Manager
 - RDS also manages secret rotation
-- Use SF Output template `!GetAtt: MyCluster.MasterUserSecret.SecretArn` to output the password arn
+- Use CF Output template `!GetAtt: MyCluster.MasterUserSecret.SecretArn` to output the password arn
 
 2. Dynamic reference
 
@@ -518,7 +518,7 @@ SecretRDSInstanceAttachment:
     TargetType: 'AWS::RDS::DBInstance'
 ```
 
-### CloudWatch Logs Encryption
+## CloudWatch Logs Encryption
 
 - You can encrypt logs with KMS CMK
 - Encryption enabled at log group level, on creation of log group or after by associating it with a CMK.
@@ -527,7 +527,7 @@ SecretRDSInstanceAttachment:
 - APIs:
   - `associate-kms-key`: if log group is already created
 
-# Encrypt an existing log group
+### Encrypt an existing log group
 
 ```
 aws logs associate-kms-key \
@@ -538,7 +538,7 @@ aws logs associate-kms-key \
 
 - `create-log-group`: if creating a new log group with encryption
 
-# Encrypt a new log group upon creation
+### Encrypt a new log group upon creation
 
 ```
 aws logs create-log-group \
@@ -552,9 +552,9 @@ aws logs create-log-group \
 - To access resources in your VPC, make sure you specify the VPC (and Subnets) for your CodeBuild when creating it.
 - Environment variables can reference SSM Parameter Store or Secrets Manager, so you don't have to store secrets in plaintext in CodeBuild environment variables.
 - Environment variable types:
-- Plaintext
-- Parameter - SSM Parameter Store
-- Secrets Manager
+  - Plaintext
+  - Parameter - SSM Parameter Store
+  - Secrets Manager
 
 ## AWS Nitro Enclaves
 
@@ -562,9 +562,9 @@ aws logs create-log-group \
 - You can do processing in the VM.
 - Uses Cryptographic Attestation: only signed code can execute; a signed 'document' of the code is provided to AWS KMS and used to compare the code passed in, to make sure it is the exact code.
 - To use:
-- Launch a Nitro based EC2 with `EnclaveOption: true`
-- Use Nitro CLI to convert app to an Enclave image file (EIF)
-- Use the EIF file as an input with the CLI, to create the Enclave instance.
+  - Launch a Nitro based EC2 with `EnclaveOption: true`
+  - Use Nitro CLI to convert app to an Enclave image file (EIF)
+  - Use the EIF file as an input with the CLI, to create the Enclave instance.
 
 ## S3 HTTPS
 
